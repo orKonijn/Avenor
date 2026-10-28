@@ -206,6 +206,7 @@ export class App {
     { path: "/watchlists", label: "Watchlists", icon: "star" },
     { path: "/alerts", label: "Alerts", icon: "bell" },
     { path: "/notifications", label: "Notifications", icon: "clock" },
+    { path: "/changelog", label: "Changelog", icon: "info" },
   ];
   constructor() {
     this.router.events.subscribe((e) => {

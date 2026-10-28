@@ -15,6 +15,11 @@ const routes: Routes = [
     canActivate: [guard],
     children: [
       {
+        path: "changelog",
+        loadComponent: () =>
+          import("./app/features/changelog").then((m) => m.ChangelogPage),
+      },
+      {
         path: "overview",
         loadComponent: () =>
           import("./app/features/overview").then((m) => m.OverviewPage),

@@ -69,3 +69,7 @@ tests/             Calculation, integrity, authorization and browser regression 
 ```
 
 The database and all credentials are ignored by Git. Do not commit `data/`, `.env`, session tokens, or user financial records. Follow [AGENTS.md](AGENTS.md) for branching, changelog, review, commits, and publication.
+
+## Changelog
+
+Open **Changelog** in desktop navigation or the mobile **More** menu. [CHANGELOG.md](CHANGELOG.md) is the single source for both GitHub and the in-app notes. The build copies that file and its screenshot assets directly, so text is never maintained separately in the component. Rebuild after editing notes.

@@ -35,3 +35,10 @@ Not performed: manual screen-reader testing, complete keyboard/zoom/device matri
 - All 13 browser journeys passed; both history journeys passed again after review fixes. Verified sample reconciliation, unavailable data, currency changes, mobile layout, axe accessibility and stale portfolio-response suppression.
 - Independent review identified a same-day split/opening-flow calculation defect. Fixed with regression coverage and re-reviewed with no remaining actionable findings.
 - Actual desktop/mobile history screenshots are included in the Unreleased changelog. No live historical provider or production deployment was tested.
+
+## Changelog presentation correction
+
+- Verified GitHub default branch is main and PR #4 merged.
+- 36 unit/API tests, build, and all 14 browser journeys passed. Changelog checks cover source text, four screenshot loads, section links, mobile navigation, overflow and axe accessibility.
+- Independent review found no actionable issues; accessibility testing identified and fixed missing underlines on screenshot links.
+- Desktop and mobile page captures: [desktop](changelog/changelog-page-desktop.png), [mobile](changelog/changelog-page-mobile.png). Historical screenshot assets were preserved.
