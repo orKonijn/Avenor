@@ -757,7 +757,7 @@ export function createApp(store = createStore()) {
         w.watchlists.some((x) => x.name.toLowerCase() === title.toLowerCase())
       )
         throw new DomainError("A watchlist with this name already exists.");
-      const item = { id: randomUUID(), name: title, items: [] };
+      const item = { id: randomUUID(), name: title, items: [], revision: 0 };
       w.watchlists.push(item);
       return item;
     }),
@@ -767,7 +767,13 @@ export function createApp(store = createStore()) {
       const item = w.watchlists.find((x) => x.id === req.params["id"]);
       if (!item)
         throw new DomainError("Watchlist not found.", "NOT_FOUND", 404);
-      if (req.body.name) {
+      if (req.body.revision !== (item.revision ?? 0))
+        throw new DomainError(
+          "This watchlist changed in another tab. Reload the latest list before trying again.",
+          "CONFLICT",
+          409,
+        );
+      if (req.body.name !== undefined) {
         const n = name(req.body.name);
         if (
           w.watchlists.some(
@@ -790,12 +796,22 @@ export function createApp(store = createStore()) {
           throw new DomainError("Choose valid assets or themes.");
         item.items = [...new Set<string>(req.body.items)];
       }
+      item.revision = (item.revision ?? 0) + 1;
       return item;
     }),
   );
   app.delete("/v1/watchlists/:id", (req, res) =>
     mutate(req, res, (w) => {
-      w.watchlists = w.watchlists.filter((x) => x.id !== req.params["id"]);
+      const item = w.watchlists.find((x) => x.id === req.params["id"]);
+      if (!item)
+        throw new DomainError("Watchlist not found.", "NOT_FOUND", 404);
+      if (req.body.revision !== (item.revision ?? 0))
+        throw new DomainError(
+          "This watchlist changed in another tab. Reload the latest list before trying again.",
+          "CONFLICT",
+          409,
+        );
+      w.watchlists = w.watchlists.filter((x) => x.id !== item.id);
       return { ok: true };
     }),
   );

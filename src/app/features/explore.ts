@@ -470,8 +470,8 @@ export class AssetPage {
       return;
     }
     if (
-      await this.s.mutate(
-        "/watchlists/" + w.id,
+      await this.s.updateWatchlist(
+        w,
         "PATCH",
         { items: [...w.items, this.id()] },
         "Asset added to watchlist",

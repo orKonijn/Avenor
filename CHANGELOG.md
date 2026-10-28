@@ -26,7 +26,17 @@ Development API clients must accept opening transactions. Cost basis, average co
 
 The new authenticated /v1/history endpoint accepts a portfolio, currency, and date range of up to 366 days. It checks portfolio ownership and returns explicit gaps for unavailable historical prices or exchange rates.
 
+Watchlist update and delete requests now require the list's revision. Older saved lists start at revision 0. Development API clients must send the revision returned with each list (0 when absent on a legacy list) and reload after a conflict; requests without a matching revision are rejected.
+
 ### Added
+
+#### Keep watchlist changes safe across tabs
+
+Watchlists now detect when another tab has changed the same list. An outdated rename, item change, reorder, or deletion is rejected so it cannot erase newer work. The app loads the latest lists after a conflict; review those changes before trying your edit again. Independent alerts remain untouched.
+
+![Watchlist conflict message confirming the latest lists are loaded](docs/changelog/assets/unreleased/watchlist-conflict.png)
+
+An older tab explains the conflict before any newer changes can be overwritten.
 
 #### Move cash between portfolios
 
@@ -106,4 +116,4 @@ Workspaces are isolated by account. Server checks enforce ownership, revisions, 
 
 ### Verification
 
-The current application passed 40 calculation/API tests, 17 browser journeys, and the production build. The history increment also passed GitHub checks. Independent review findings were fixed and re-reviewed. Screenshots above were captured from the running app with sample data. Automated accessibility checks do not replace manual screen-reader and device reviews.
+The current application passed 41 calculation/API tests, 18 browser journeys, and the production build. The history increment also passed GitHub checks. Independent review findings were fixed and re-reviewed. Screenshots above were captured from the running app with sample data. Automated accessibility checks do not replace manual screen-reader and device reviews.

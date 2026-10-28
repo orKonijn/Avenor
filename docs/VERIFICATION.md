@@ -48,3 +48,11 @@ Not performed: manual screen-reader testing, complete keyboard/zoom/device matri
 - 40 unit/API tests verify pair integrity, ownership, duplicate replay, revisions, insufficient funds, setup/archive restrictions, backdated replay, aggregate flow treatment, and dependent-activity void rejection.
 - Transfer browser journeys verify receipt links, pair voids, uncertain-save retries, and receipt isolation during browser Back; the changelog asserts current version 1.0.0 and planned 1.1.0 Unreleased.
 - Independent review identified pending-operation route reuse. Fixed with a browser regression and targeted re-review. Same-currency cash only; no transfer FX or bundled fees.
+
+## Watchlist conflict protection
+
+- Typecheck, 41 calculation/API tests, production build, and dependency audit passed (zero reported vulnerabilities).
+- All 18 browser journeys passed on the full-suite rerun. An existing transfer browser-Back assertion failed once in the initial run; all three transfer journeys then passed three repeated runs before the full suite passed. No transfer code was changed in this increment.
+- New coverage checks stale edits/deletes, legacy lists without revisions, owner isolation, idempotent retries, and alerts surviving list deletion. A two-tab browser journey verifies conflict recovery, deliberate retry, persistence, no axe violations, and no horizontal overflow at 390 px.
+- Independent review of the full change found no actionable findings. Actual conflict screenshot added at docs/changelog/assets/unreleased/watchlist-conflict.png; changelog screenshots load on desktop and mobile with current 1.0.0 and planned 1.1.0 Unreleased labels.
+- Manual screen-reader/device coverage and production deployment remain outside this verification.

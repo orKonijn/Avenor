@@ -49,8 +49,17 @@ import { Watchlist } from "../domain/models";
             </p>
           </div>
           <div class="inline-controls">
-            <button class="button text" (click)="rename(w)">Rename</button
-            ><button class="button text danger" (click)="remove(w)">
+            <button
+              class="button text"
+              [disabled]="s.busy()"
+              (click)="rename(w)"
+            >
+              Rename</button
+            ><button
+              class="button text danger"
+              [disabled]="s.busy()"
+              (click)="remove(w)"
+            >
               Delete
             </button>
           </div>
@@ -64,7 +73,11 @@ import { Watchlist } from "../domain/models";
             @for (t of s.state()?.themes; track t.id) {
               <option [value]="t.id">Theme · {{ t.name }}</option>
             }</select
-          ><button class="button secondary" (click)="add(w, assetSelect.value)">
+          ><button
+            class="button secondary"
+            [disabled]="s.busy()"
+            (click)="add(w, assetSelect.value)"
+          >
             <av-icon name="plus" />Add
           </button>
         </div>
@@ -89,20 +102,21 @@ import { Watchlist } from "../domain/models";
               <button
                 class="icon-button"
                 [attr.aria-label]="'Move ' + id + ' up'"
-                [disabled]="i === 0"
+                [disabled]="s.busy() || i === 0"
                 (click)="move(w, i, -1)"
               >
                 ↑</button
               ><button
                 class="icon-button"
                 [attr.aria-label]="'Move ' + id + ' down'"
-                [disabled]="i === w.items.length - 1"
+                [disabled]="s.busy() || i === w.items.length - 1"
                 (click)="move(w, i, 1)"
               >
                 ↓</button
               ><button
                 class="icon-button"
                 [attr.aria-label]="'Remove ' + id"
+                [disabled]="s.busy()"
                 (click)="removeItem(w, id)"
               >
                 <av-icon name="close" />
@@ -151,8 +165,8 @@ export class WatchlistsPage {
   async rename(w: Watchlist) {
     const n = prompt("Watchlist name", w.name);
     if (n !== null)
-      await this.s.mutate(
-        "/watchlists/" + w.id,
+      await this.s.updateWatchlist(
+        w,
         "PATCH",
         { name: n },
         "Watchlist renamed",
@@ -160,8 +174,8 @@ export class WatchlistsPage {
   }
   async remove(w: Watchlist) {
     if (confirm(`Delete “${w.name}”? Independent alerts will remain active.`))
-      await this.s.mutate(
-        "/watchlists/" + w.id,
+      await this.s.updateWatchlist(
+        w,
         "DELETE",
         {},
         "Watchlist deleted; alerts preserved",
@@ -169,16 +183,16 @@ export class WatchlistsPage {
   }
   async add(w: Watchlist, id: string) {
     if (!id) return;
-    await this.s.mutate(
-      "/watchlists/" + w.id,
+    await this.s.updateWatchlist(
+      w,
       "PATCH",
       { items: [...w.items, id] },
       "Added to watchlist",
     );
   }
   async removeItem(w: Watchlist, id: string) {
-    await this.s.mutate(
-      "/watchlists/" + w.id,
+    await this.s.updateWatchlist(
+      w,
       "PATCH",
       { items: w.items.filter((x) => x !== id) },
       "Removed from watchlist",
@@ -187,8 +201,8 @@ export class WatchlistsPage {
   async move(w: Watchlist, index: number, delta: number) {
     const items = [...w.items];
     [items[index], items[index + delta]] = [items[index + delta], items[index]];
-    await this.s.mutate(
-      "/watchlists/" + w.id,
+    await this.s.updateWatchlist(
+      w,
       "PATCH",
       { items },
       "Watchlist order updated",

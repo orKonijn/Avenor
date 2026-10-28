@@ -82,6 +82,7 @@ export interface Valuation {
   revision: number;
 }
 export interface Watchlist {
+  revision?: number;
   id: string;
   name: string;
   items: string[];
