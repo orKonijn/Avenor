@@ -3229,3 +3229,5 @@ dd {
   .full-holdings-table .holdings-table { display: table; min-width: 800px; }
   .mobile-holdings.cards-hidden { display: none; }
 }
+.history-table td:last-child { min-width: 230px; white-space: normal; }
+.history-table td small { white-space: normal; overflow: visible; text-overflow: clip; }
