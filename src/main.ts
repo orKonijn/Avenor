@@ -30,6 +30,16 @@ const routes: Routes = [
           import("./app/features/portfolios").then((m) => m.PortfoliosPage),
       },
       {
+        path: "portfolios/archived",
+        loadComponent: () =>
+          import("./app/features/archived").then((m) => m.ArchivedPage),
+      },
+      {
+        path: "portfolios/archived/:id",
+        loadComponent: () =>
+          import("./app/features/archived").then((m) => m.ArchivedPage),
+      },
+      {
         path: "portfolios/:id/transactions",
         loadComponent: () =>
           import("./app/features/portfolios").then((m) => m.PortfoliosPage),

@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router, RouterLink } from "@angular/router";
+import { compareHoldings } from "../domain/holdings";
 import { Store } from "../core/store";
 import { Icon, Source, Empty } from "../shared/ui";
 @Component({
@@ -17,6 +18,9 @@ import { Icon, Source, Empty } from "../shared/ui";
         <p>Every holding, every transaction. All in perspective.</p>
       </div>
       <div class="inline-controls">
+        <a class="button secondary" routerLink="/portfolios/archived"
+          >Archived portfolios</a
+        >
         <button class="button secondary" (click)="creating.set(!creating())">
           <av-icon name="plus" />Create portfolio</button
         ><a
@@ -129,6 +133,15 @@ import { Icon, Source, Empty } from "../shared/ui";
                 <option>Equity</option>
                 <option>ETF</option></select
               ><select
+                aria-label="Holding currency"
+                [ngModel]="currency()"
+                (ngModelChange)="currency.set($event); saveFilters()"
+              >
+                <option value="">All currencies</option>
+                @for (c of s.state()?.currencies; track c) {
+                  <option>{{ c }}</option>
+                }</select
+              ><select
                 aria-label="Gain or loss"
                 [ngModel]="gainFilter()"
                 (ngModelChange)="gainFilter.set($event); saveFilters()"
@@ -139,8 +152,21 @@ import { Icon, Source, Empty } from "../shared/ui";
               </select>
             </div>
           </div>
+          <div class="mobile-table-toggle">
+            <button
+              class="button secondary"
+              [attr.aria-pressed]="fullTable()"
+              (click)="fullTable.set(!fullTable()); saveFilters()"
+            >
+              {{ fullTable() ? "Show holding cards" : "Show full table" }}
+            </button>
+            @if (fullTable()) {
+              <p>Scroll horizontally to compare every column.</p>
+            }
+          </div>
           <div
-            class="table-scroll"
+            [class.full-holdings-table]="fullTable()"
+            class="table-scroll holdings-scroll"
             role="region"
             aria-label="Holdings table"
             tabindex="0"
@@ -169,10 +195,7 @@ import { Icon, Source, Empty } from "../shared/ui";
                 </tr>
               </thead>
               <tbody>
-                @for (
-                  h of filtered().slice(page() * 25, (page() + 1) * 25);
-                  track $index
-                ) {
+                @for (h of paged(); track $index) {
                   <tr>
                     <td>
                       <a
@@ -237,6 +260,7 @@ import { Icon, Source, Empty } from "../shared/ui";
                             query.set('');
                             assetClass.set('');
                             gainFilter.set('');
+                            currency.set('');
                             saveFilters()
                           "
                         >
@@ -249,8 +273,8 @@ import { Icon, Source, Empty } from "../shared/ui";
               </tbody>
             </table>
           </div>
-          <div class="mobile-holdings">
-            @for (h of filtered(); track $index) {
+          <div class="mobile-holdings" [class.cards-hidden]="fullTable()">
+            @for (h of paged(); track $index) {
               <details>
                 <summary>
                   <span
@@ -272,21 +296,41 @@ import { Icon, Source, Empty } from "../shared/ui";
                 </dl>
                 <a [routerLink]="['/assets', h.assetId]">View asset details</a>
               </details>
+            } @empty {
+              <av-empty
+                title="No matching holdings"
+                description="Try another filter."
+                ><button
+                  class="button secondary"
+                  (click)="
+                    query.set('');
+                    assetClass.set('');
+                    currency.set('');
+                    gainFilter.set('');
+                    saveFilters()
+                  "
+                >
+                  Clear filters
+                </button></av-empty
+              >
             }
           </div>
           <div class="table-footer">
-            <span>{{ filtered().length }} holdings · 25 per page</span>
+            <span
+              >{{ filtered().length }} holdings · Page
+              {{ currentPage() + 1 }} of {{ pageCount() }}</span
+            >
             <div>
               <button
                 class="button secondary"
-                [disabled]="page() === 0"
-                (click)="page.set(page() - 1)"
+                [disabled]="currentPage() === 0"
+                (click)="page.set(currentPage() - 1)"
               >
                 Previous</button
               ><button
                 class="button secondary"
-                [disabled]="(page() + 1) * 25 >= filtered().length"
-                (click)="page.set(page() + 1)"
+                [disabled]="(currentPage() + 1) * 25 >= filtered().length"
+                (click)="page.set(currentPage() + 1)"
               >
                 Next
               </button>
@@ -418,6 +462,8 @@ export class PortfoliosPage {
   query = signal("");
   assetClass = signal("");
   gainFilter = signal("");
+  currency = signal("");
+  fullTable = signal(false);
   sort = signal("value");
   ascending = signal(false);
   page = signal(0);
@@ -431,6 +477,7 @@ export class PortfoliosPage {
     "fee",
     "fx",
     "split",
+    "opening",
   ];
   columns = [
     { key: "quantity", label: "Quantity" },
@@ -450,20 +497,23 @@ export class PortfoliosPage {
         (h) =>
           (h.asset.name + h.asset.symbol).toLowerCase().includes(q) &&
           (!this.assetClass() || h.asset.class === this.assetClass()) &&
+          (!this.currency() || h.asset.currency === this.currency()) &&
           (!this.gainFilter() ||
             (h.gain !== null &&
               (this.gainFilter() === "gain" ? +h.gain >= 0 : +h.gain < 0))),
       )
-      .sort((a, b) => {
-        const key = this.sort();
-        const val = (h: any) =>
-          Number(key === "price" ? h.asset.price : h[key]);
-        return (
-          (val(a) - val(b)) * (this.ascending() ? 1 : -1) ||
-          a.asset.symbol.localeCompare(b.asset.symbol)
-        );
-      });
+      .sort((a, b) => compareHoldings(a, b, this.sort(), this.ascending()));
   });
+  pageCount = computed(() =>
+    Math.max(1, Math.ceil(this.filtered().length / 25)),
+  );
+  currentPage = computed(() => Math.min(this.page(), this.pageCount() - 1));
+  paged = computed(() =>
+    this.filtered().slice(
+      this.currentPage() * 25,
+      (this.currentPage() + 1) * 25,
+    ),
+  );
   constructor() {
     this.route.paramMap.subscribe((p) => {
       if (p.get("id")) this.s.select(p.get("id")!);
@@ -476,6 +526,8 @@ export class PortfoliosPage {
     this.query.set(p.get("q") || "");
     this.assetClass.set(p.get("class") || "");
     this.gainFilter.set(p.get("result") || "");
+    this.currency.set(p.get("currency") || "");
+    this.fullTable.set(p.get("view") === "table");
     this.sort.set(p.get("sort") || "value");
     this.ascending.set(p.get("asc") === "true");
   }
@@ -493,6 +545,7 @@ export class PortfoliosPage {
     }
   }
   select(id: string) {
+    this.page.set(0);
     this.s.select(id);
     this.router.navigate(["/portfolios", id], {
       queryParamsHandling: "preserve",
@@ -515,11 +568,14 @@ export class PortfoliosPage {
     this.saveFilters();
   }
   saveFilters() {
+    this.page.set(0);
     this.router.navigate([], {
       queryParams: {
         q: this.query() || null,
         class: this.assetClass() || null,
         result: this.gainFilter() || null,
+        currency: this.currency() || null,
+        view: this.fullTable() ? "table" : null,
         sort: this.sort(),
         asc: this.ascending(),
       },

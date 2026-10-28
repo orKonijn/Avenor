@@ -3221,3 +3221,11 @@ dd {
 .opening-row .callout {
   margin-top: 18px;
 }
+.mobile-table-toggle { display: none; }
+@media (max-width: 767px) {
+  .mobile-table-toggle { display: block; padding: 0 18px 16px; }
+  .mobile-table-toggle p { color: var(--muted); font-size: 12px; }
+  .holdings-scroll:not(.full-holdings-table) { display: none; }
+  .full-holdings-table .holdings-table { display: table; min-width: 800px; }
+  .mobile-holdings.cards-hidden { display: none; }
+}
