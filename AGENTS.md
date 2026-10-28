@@ -35,6 +35,8 @@ Use one short-lived branch per coherent task.
 
 ## 3. Changelog
 
+Follow [Changelog and release-note guidelines](docs/CHANGELOG_GUIDELINES.md) whenever implementing meaningful changes or preparing a release. These detailed user instructions govern version selection, release status, entry content, screenshots, verification, and the release-note handoff alongside this workflow.
+
 Document meaningful changes as part of implementing them.
 
 - Use the repository’s existing mechanism: `CHANGELOG.md`, Changesets, release-note fragments, or another established system.

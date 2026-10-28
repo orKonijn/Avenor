@@ -66,7 +66,7 @@ test("fee-inclusive FIFO sale, remaining basis, valuation and split", () => {
   p = replay(ledger).positions[0];
   assert.equal(p.quantity, "12");
   assert.equal(p.basis, "606");
-  assert.equal(D(p.basis).div(p.quantity).toString(), "50.5");
+  assert.equal(D(p.basis!).div(p.quantity).toString(), "50.5");
 });
 test("multiple FIFO lots allocate remaining basis correctly", () => {
   const p = replay([
@@ -86,7 +86,7 @@ test("sample ledger reconciles exactly to the specification snapshot", () => {
   assert.equal(v.cashValue, "4500");
   assert.equal(v.basis, "115300");
   assert.equal(v.gain, "5200");
-  assert.equal(D(v.gain!).div(v.basis).mul(100).toFixed(2), "4.51");
+  assert.equal(D(v.gain!).div(v.basis!).mul(100).toFixed(2), "4.51");
   assert.equal(
     v.holdings.reduce((s, h) => s.plus(h.value!), D(v.cashValue!)).toString(),
     v.value,

@@ -22,12 +22,12 @@ test("fresh crossings, stale suppression, deduplication, cooldown and reset", ()
   assert.equal(w.notifications.length, 1);
   evaluateAlerts(w, "msft-xnas", "120", now.toISOString(), true, now);
   assert.equal(w.notifications.length, 1);
-  evaluateAlerts(w, "msft-xnas", "90", now.toISOString(), true, now);
-  evaluateAlerts(w, "msft-xnas", "110", now.toISOString(), true, now);
+  evaluateAlerts(w, "msft-xnas", "90", "2025-01-01T00:01:00Z", true, now);
+  evaluateAlerts(w, "msft-xnas", "110", "2025-01-01T00:02:00Z", true, now);
   assert.equal(w.notifications.length, 1);
   const later = new Date("2025-01-03T00:00:00Z");
   evaluateAlerts(w, "msft-xnas", "90", later.toISOString(), true, later);
-  evaluateAlerts(w, "msft-xnas", "110", later.toISOString(), true, later);
+  evaluateAlerts(w, "msft-xnas", "110", "2025-01-03T00:01:00Z", true, later);
   assert.equal(w.notifications.length, 2);
 });
 test("once alert deactivates; newly satisfied condition waits for reset", () => {

@@ -219,7 +219,7 @@ import { Icon, Source, Empty } from "../shared/ui";
                     >
                       {{ +(h.gain || 0) > 0 ? "+" : "" }}{{ s.money(h.gain)
                       }}<small>{{
-                        h.gain !== null && +h.basis > 0
+                        h.gain !== null && h.basis !== null && +h.basis > 0
                           ? s.percent((+h.gain / +h.basis) * 100)
                           : "Unavailable"
                       }}</small>

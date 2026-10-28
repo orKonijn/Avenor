@@ -15,6 +15,8 @@ npm run dev
 
 Open **http://127.0.0.1:4200** and choose **Explore the sample workspace**. Each new demo session has its own server-side workspace. The sample persists across refreshes through an HttpOnly cookie and SQLite. It is never merged into another account.
 
+Choose **Start an empty sample workspace** to try the three-step setup. Use **Save draft** to persist unfinished opening balances. Unknown cost basis leaves gains unavailable until you edit the opening transaction.
+
 For the production build:
 
 ```sh
@@ -42,7 +44,7 @@ Live/delayed quotes, historical FX, total-return benchmarks, OHLC, licensed news
 
 Real registration is **disabled by default**. Optional local account flows require `ENABLE_LOCAL_ACCOUNTS=true`, `APP_ORIGIN`, and a server-only `EMAIL_WEBHOOK_URL`. The adapter receives `{ email, kind, url }` with an optional Bearer secret. Production use additionally requires reliable email delivery/retries, identity-provider compromised-password screening, account/session management, a retention/deletion policy, backups, telemetry, and deployment security review.
 
-The sample observation endpoint evaluates alerts on the server. Continuous evaluation while the browser is closed requires a provider-ingestion scheduler. Portfolio valuation/drawdown alerts, notify-now, full historical performance/benchmark switching, historical FX basis, opening holdings with unknown basis, account email/password/session management, mobile full-table mode, and the full onboarding interest/holding workflow remain follow-on work. See [implementation status](docs/IMPLEMENTATION.md) for the specification coverage and release gates.
+The sample observation endpoint evaluates alerts on the server. Continuous evaluation while the browser is closed requires a provider-ingestion scheduler. Portfolio-value and daily-loss alerts use a fixed observation currency. Daily loss compares consecutive UTC sample closing dates after removing net external flow; it is not peak-relative drawdown. Missing/stale/gapped closes reset the comparison. Full historical performance/benchmark switching, historical FX basis, account email/password/session management, and mobile full-table mode remain follow-on work. See [implementation status](docs/IMPLEMENTATION.md) for the specification coverage and release gates.
 
 ## Verification
 

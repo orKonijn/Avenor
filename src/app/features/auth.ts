@@ -127,6 +127,13 @@ import { Icon, Logo } from "../shared/ui";
         >
           Explore the sample workspace <av-icon name="arrow" />
         </button>
+        <button
+          class="button text full"
+          [disabled]="s.busy()"
+          (click)="emptyDemo()"
+        >
+          Start an empty sample workspace
+        </button>
         <p class="auth-caption">
           No account needed. Sample data, real possibilities.
         </p>
@@ -187,6 +194,10 @@ export class AuthPage {
       email: this.form.controls.email.value,
     });
   }
+  async emptyDemo() {
+    if (await this.s.login("demo", { empty: true }))
+      await this.router.navigateByUrl("/onboarding/preferences");
+  }
   async demo() {
     if (await this.s.login("demo"))
       await this.router.navigateByUrl("/overview");
@@ -215,7 +226,10 @@ export class AuthPage {
     } else if (data?.user)
       await this.router.navigateByUrl(
         data.workspace.preferences.onboarding < 3
-          ? "/onboarding/preferences"
+          ? "/onboarding/" +
+              ["preferences", "portfolio", "holdings"][
+                data.workspace.preferences.onboarding
+              ]
           : "/overview",
       );
   }

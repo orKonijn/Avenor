@@ -362,6 +362,12 @@ export class DiscoverPage {
             </div>
             <details class="lots">
               <summary>Remaining FIFO lots ({{ h.lots.length }})</summary>
+              @if (h.basis === null) {
+                <p class="callout">
+                  Cost basis is unknown for one or more lots. Gains remain
+                  unavailable until the opening record is corrected.
+                </p>
+              }
               <div class="table-scroll">
                 <table>
                   <thead>
@@ -374,7 +380,21 @@ export class DiscoverPage {
                   <tbody>
                     @for (lot of h.lots; track lot.transactionId) {
                       <tr>
-                        <td>{{ lot.transactionId }}</td>
+                        <td>
+                          <a
+                            [routerLink]="[
+                              '/transactions',
+                              lot.transactionId,
+                              'edit',
+                            ]"
+                            >{{ lot.transactionId }}</a
+                          ><small
+                            >Acquired:
+                            {{
+                              lot.acquiredAt?.slice(0, 10) || "Unknown date"
+                            }}</small
+                          >
+                        </td>
                         <td class="numeric">{{ lot.quantity }}</td>
                         <td class="numeric">
                           {{ s.money(lot.basis, a.currency) }}

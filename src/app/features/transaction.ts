@@ -99,6 +99,18 @@ import { Transaction } from "../domain/models";
                   placeholder="0.00"
               /></label>
             }
+            @if (form.controls.type.value === "opening") {
+              <label class="check-label"
+                ><input type="checkbox" formControlName="basisUnknown" />Unknown
+                cost basis (gains unavailable)</label
+              >
+              <label
+                >Acquisition date (leave blank if unknown)<input
+                  type="date"
+                  formControlName="acquiredAt"
+                  [max]="form.controls.date.value"
+              /></label>
+            }
             @if (form.controls.type.value === "fx") {
               <label
                 >Destination currency<select
@@ -171,6 +183,18 @@ import { Transaction } from "../domain/models";
             </dd>
             <dt>Cash impact</dt>
             <dd>{{ cashImpact() }}</dd>
+            @if (form.controls.type.value === "opening") {
+              <dt>Cost basis</dt>
+              <dd>
+                {{
+                  form.controls.basisUnknown.value
+                    ? "Unknown · gains unavailable"
+                    : s.money(gross(), form.controls.currency.value)
+                }}
+              </dd>
+              <dt>Acquisition date</dt>
+              <dd>{{ form.controls.acquiredAt.value || "Unknown date" }}</dd>
+            }
             @if (form.controls.type.value === "fx") {
               <dt>Destination credit</dt>
               <dd>{{ fxCredit() }}</dd>
@@ -217,6 +241,7 @@ export class TransactionPage {
     "fee",
     "fx",
     "split",
+    "opening",
   ];
   form = this.fb.nonNullable.group({
     portfolioId: ["", Validators.required],
@@ -229,6 +254,8 @@ export class TransactionPage {
     fee: ["0"],
     destinationCurrency: ["EUR"],
     rate: ["1"],
+    basisUnknown: [false],
+    acquiredAt: [""],
     note: [""],
   });
   constructor() {
@@ -237,7 +264,11 @@ export class TransactionPage {
       .workspace()
       ?.transactions.find((t) => t.id === this.editing);
     if (old) {
-      this.form.patchValue({ ...old, date: old.effectiveAt.slice(0, 10) });
+      this.form.patchValue({
+        ...old,
+        date: old.effectiveAt.slice(0, 10),
+        acquiredAt: old.acquiredAt?.slice(0, 10) || "",
+      });
       this.form.controls.portfolioId.disable();
     } else
       this.form.controls.portfolioId.setValue(
@@ -257,7 +288,7 @@ export class TransactionPage {
       this.form.markAsDirty();
     }
     this.form.controls.type.valueChanges.subscribe((t) => {
-      if (t === "split") {
+      if (t === "split" || t === "opening") {
         this.form.controls.price.setValue("0");
         this.form.controls.fee.setValue("0");
       }
@@ -268,7 +299,7 @@ export class TransactionPage {
     });
   }
   needsAsset() {
-    return ["buy", "sell", "dividend", "split"].includes(
+    return ["buy", "sell", "dividend", "split", "opening"].includes(
       this.form.controls.type.value,
     );
   }
@@ -289,7 +320,7 @@ export class TransactionPage {
   cashImpact() {
     try {
       const t = this.form.controls.type.value;
-      if (t === "split") return "No cash movement";
+      if (t === "split" || t === "opening") return "No cash movement";
       const gross = D(this.gross() || 0),
         fee = D(this.form.controls.fee.value || 0);
       const debit = ["buy", "withdrawal", "fee", "fx"].includes(t);
@@ -332,6 +363,8 @@ export class TransactionPage {
       ?.transactions.find((t) => t.id === this.editing);
     const t = {
       ...v,
+      price: v.type === "opening" && v.basisUnknown ? "0" : v.price,
+      acquiredAt: v.acquiredAt || null,
       id: old?.id || "preview",
       effectiveAt:
         old && old.effectiveAt.slice(0, 10) === v.date
