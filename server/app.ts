@@ -11,6 +11,7 @@ import {
 import { resolve } from "node:path";
 import { createStore } from "./store";
 import { assets, themes, newWorkspace, AS_OF } from "./sample";
+import { completeOnboarding, normalizeOpeningDraft } from "./onboarding";
 import {
   D,
   decimal,
@@ -19,8 +20,12 @@ import {
   valueLedger,
   aggregateValuations,
 } from "../src/app/domain/ledger";
-import { Transaction, Workspace } from "../src/app/domain/models";
-import { evaluateAlerts } from "./alerts";
+import { Transaction, Workspace, AlertRule } from "../src/app/domain/models";
+import {
+  evaluateAlerts,
+  evaluatePortfolioAlerts,
+  evaluateRule,
+} from "./alerts";
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 const passwordHash = (p: string) => {
   const salt = randomBytes(16).toString("hex");
@@ -171,7 +176,7 @@ export function createApp(store = createStore()) {
       );
     next();
   });
-  app.post("/v1/auth/demo", (_req, res) => {
+  app.post("/v1/auth/demo", (req, res) => {
     const id = randomUUID();
     store.db
       .prepare("INSERT INTO users VALUES (?,?,?,?,?,?,?)")
@@ -182,7 +187,7 @@ export function createApp(store = createStore()) {
         "",
         1,
         1,
-        JSON.stringify(newWorkspace(true)),
+        JSON.stringify(newWorkspace(req.body?.empty !== true)),
       );
     bootstrap(res, id, session(res, id));
   });
@@ -448,6 +453,17 @@ export function createApp(store = createStore()) {
         archived: false,
       };
       w.portfolios.push(p);
+      if (req.body.onboarding === true) {
+        if (w.preferences.onboarding !== 1 || w.onboarding?.portfolioId)
+          throw new DomainError(
+            "Resume your existing setup instead of creating another onboarding portfolio.",
+            "CONFLICT",
+            409,
+          );
+        w.onboarding = { portfolioId: p.id };
+        w.preferences.onboarding = 2;
+        w.preferences.revision++;
+      }
       return p;
     }),
   );
@@ -523,6 +539,10 @@ export function createApp(store = createStore()) {
       if (mode !== "new" && !old)
         throw new DomainError("Transaction not found.", "NOT_FOUND", 404);
       const p = portfolio(w, old?.portfolioId || String(req.params["id"]));
+      if (w.preferences.onboarding === 2 && w.onboarding?.portfolioId === p.id)
+        throw new DomainError(
+          "Finish opening-balance setup before recording or correcting transactions in this portfolio.",
+        );
       if (p.archived)
         throw new DomainError("Archived portfolios are read-only.");
       if (req.body.revision !== p.revision)
@@ -548,6 +568,8 @@ export function createApp(store = createStore()) {
               note: String(req.body.note || "").slice(0, 500),
               destinationCurrency: req.body.destinationCurrency,
               rate: req.body.rate,
+              basisUnknown: req.body.basisUnknown === true,
+              acquiredAt: req.body.acquiredAt ?? null,
               revision: (old?.revision || 0) + 1,
             };
       if (
@@ -556,7 +578,7 @@ export function createApp(store = createStore()) {
       )
         throw new DomainError("Choose a valid transaction date.");
       t.effectiveAt = new Date(t.effectiveAt).toISOString();
-      if (["buy", "sell", "split", "dividend"].includes(t.type)) {
+      if (["buy", "sell", "split", "dividend", "opening"].includes(t.type)) {
         const a = assets.find((a) => a.id === t.assetId);
         if (!a || a.currency !== t.currency)
           throw new DomainError("Choose an asset and its quote currency.");
@@ -610,10 +632,42 @@ export function createApp(store = createStore()) {
               .filter((x: unknown) => typeof x === "string")
               .slice(0, 10)
           : [],
-        onboarding: Math.min(3, Math.max(0, Number(p.onboarding) || 0)),
+        onboarding: Math.max(
+          w.preferences.onboarding,
+          Math.min(1, Math.max(0, Number(p.onboarding) || 0)),
+        ),
         revision: w.preferences.revision + 1,
       };
       return w.preferences;
+    }),
+  );
+  app.put("/v1/onboarding/holdings-draft", (req, res) =>
+    mutate(req, res, (w) => {
+      if (w.preferences.onboarding !== 2 || !w.onboarding?.portfolioId)
+        throw new DomainError("Create your onboarding portfolio first.");
+      if (req.body.revision !== w.revision)
+        throw new DomainError(
+          "Your setup changed in another session. Reload before saving this draft.",
+          "CONFLICT",
+          409,
+        );
+      w.onboarding.draft = normalizeOpeningDraft(req.body.draft);
+      return w.onboarding;
+    }),
+  );
+  app.post("/v1/onboarding/complete", (req, res) =>
+    mutate(req, res, (w) => {
+      if (req.body.revision !== w.revision)
+        throw new DomainError(
+          "Your setup changed. Reload and review your opening balances.",
+          "CONFLICT",
+          409,
+        );
+      return completeOnboarding(
+        w,
+        normalizeOpeningDraft(req.body.draft),
+        assets,
+      );
     }),
   );
   app.get("/v1/assets", (req, res) =>
@@ -698,26 +752,75 @@ export function createApp(store = createStore()) {
     mutate(req, res, (w) => {
       if (w.alerts.length >= 100)
         throw new DomainError("You can have up to 100 alerts.");
-      const a = assets.find((a) => a.id === req.body.assetId);
-      if (!a) throw new DomainError("Choose a valid asset.");
+      const kind = req.body.kind || "price";
+      if (!["price", "portfolio-value", "portfolio-drawdown"].includes(kind))
+        throw new DomainError("Choose a supported alert type.");
+      const a =
+        kind === "price" ? assets.find((a) => a.id === req.body.assetId) : null;
+      const p =
+        kind === "price" ? null : portfolio(w, String(req.body.portfolioId));
+      if (kind === "price" && !a)
+        throw new DomainError("Choose a valid asset.");
+      if (p?.archived) throw new DomainError("Choose an active portfolio.");
       decimal(req.body.threshold, "Threshold", true);
+      if (kind === "portfolio-drawdown" && D(req.body.threshold).gt(100))
+        throw new DomainError("Daily-loss threshold cannot exceed 100%.");
       if (
         !["above", "below"].includes(req.body.direction) ||
         !["once", "recurring"].includes(req.body.cadence)
       )
         throw new DomainError("Choose a valid condition and cadence.");
-      const alert = {
+      const currency = a?.currency || req.body.currency;
+      if (!["USD", "EUR", "GBP"].includes(currency))
+        throw new DomainError("Choose a supported fixed alert currency.");
+      const initial =
+        a?.price ??
+        (p
+          ? valueLedger(
+              w.transactions.filter((t) => t.portfolioId === p.id),
+              assets,
+              p.revision,
+              currency,
+            ).value
+          : null);
+      const alert: AlertRule = {
         id: randomUUID(),
-        assetId: a.id,
-        direction: req.body.direction,
+        kind,
+        assetId: a?.id || "",
+        portfolioId: p?.id,
+        currency,
+        basis:
+          kind === "price"
+            ? "quote-price"
+            : kind === "portfolio-value"
+              ? "portfolio-value"
+              : "close-to-close-net-flow",
+        direction: kind === "portfolio-drawdown" ? "above" : req.body.direction,
         threshold: req.body.threshold,
         cadence: req.body.cadence,
         paused: false,
-        previous: a.price,
+        previous: kind === "portfolio-drawdown" ? null : initial,
+        previousClose: null,
         lastFired: null,
-        state: "Sample feed · waiting for a new observation",
+        state:
+          kind === "portfolio-drawdown"
+            ? "Collecting comparable closes"
+            : "Sample feed · waiting for a new observation",
       };
       w.alerts.push(alert);
+      if (
+        req.body.notifyNow === true &&
+        initial !== null &&
+        kind !== "portfolio-drawdown"
+      )
+        evaluateRule(
+          w,
+          alert,
+          initial,
+          new Date().toISOString(),
+          new Date(),
+          true,
+        );
       return alert;
     }),
   );
@@ -728,8 +831,14 @@ export function createApp(store = createStore()) {
       if (typeof req.body.paused === "boolean") a.paused = req.body.paused;
       if (req.body.threshold) {
         decimal(req.body.threshold, "Threshold", true);
+        if (a.kind === "portfolio-drawdown" && D(req.body.threshold).gt(100))
+          throw new DomainError("Daily-loss threshold cannot exceed 100%.");
         a.threshold = req.body.threshold;
+        a.version = (a.version || 1) + 1;
         a.previous = null;
+        a.previousClose = null;
+        a.lastObservedAt = null;
+        a.state = "Rule updated · waiting for a fresh baseline";
       }
       return a;
     }),
@@ -768,6 +877,35 @@ export function createApp(store = createStore()) {
       return { ok: true };
     }),
   );
+  app.post("/v1/demo/portfolio-observations", (req, res) =>
+    mutate(req, res, (w) => {
+      if (!res.locals["user"].demo)
+        throw new DomainError(
+          "Only available in the sample workspace.",
+          "FORBIDDEN",
+          403,
+        );
+      const p = portfolio(w, String(req.body.portfolioId));
+      if (p.archived) throw new DomainError("Choose an active portfolio.");
+      if (!["USD", "EUR", "GBP"].includes(req.body.currency))
+        throw new DomainError("Choose a supported observation currency.");
+      const at = String(req.body.observedAt || new Date().toISOString());
+      if (!Number.isFinite(Date.parse(at)) || Date.parse(at) > Date.now())
+        throw new DomainError(
+          "Choose a valid observation time that is not in the future.",
+        );
+      evaluatePortfolioAlerts(
+        w,
+        p.id,
+        req.body.value,
+        req.body.currency,
+        new Date(at).toISOString(),
+        req.body.externalFlow || "0",
+        req.body.fresh !== false,
+      );
+      return { ok: true };
+    }),
+  );
   app.use("/v1", (_req, _res, next) =>
     next(new DomainError("This endpoint is unavailable.", "NOT_FOUND", 404)),
   );
@@ -786,17 +924,15 @@ export function createApp(store = createStore()) {
         : err.type === "entity.parse.failed"
           ? 400
           : 500;
-    res
-      .status(status)
-      .json({
-        code: err.code || "INTERNAL",
-        message:
-          status === 500
-            ? "Something went wrong. Your changes were not saved."
-            : err.message,
-        fieldErrors: {},
-        requestId: res.locals["requestId"],
-      });
+    res.status(status).json({
+      code: err.code || "INTERNAL",
+      message:
+        status === 500
+          ? "Something went wrong. Your changes were not saved."
+          : err.message,
+      fieldErrors: {},
+      requestId: res.locals["requestId"],
+    });
   });
   return { app, store };
 }

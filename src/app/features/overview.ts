@@ -66,7 +66,7 @@ import { Chart } from "../shared/chart";
             >{{ +(v.gain || 0) > 0 ? "+" : "" }}{{ s.money(v.gain) }}</strong
           ><small
             ><b [class.positive]="+(v.gain || 0) >= 0">{{
-              v.gain !== null && +v.basis > 0
+              v.gain !== null && v.basis !== null && +v.basis > 0
                 ? s.percent((+v.gain / +v.basis) * 100)
                 : "—"
             }}</b>

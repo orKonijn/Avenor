@@ -101,17 +101,17 @@ const routes: Routes = [
       {
         path: "alerts",
         loadComponent: () =>
-          import("./app/features/organize").then((m) => m.AlertsPage),
+          import("./app/features/alerts").then((m) => m.AlertsPage),
       },
       {
         path: "alerts/new",
         loadComponent: () =>
-          import("./app/features/organize").then((m) => m.AlertsPage),
+          import("./app/features/alerts").then((m) => m.AlertsPage),
       },
       {
         path: "alerts/:id/edit",
         loadComponent: () =>
-          import("./app/features/organize").then((m) => m.AlertsPage),
+          import("./app/features/alerts").then((m) => m.AlertsPage),
       },
       {
         path: "notifications",
@@ -126,7 +126,15 @@ const routes: Routes = [
       {
         path: "onboarding/:step",
         loadComponent: () =>
-          import("./app/features/settings").then((m) => m.SettingsPage),
+          import("./app/features/onboarding").then((m) => m.OnboardingPage),
+        canDeactivate: [
+          (c: any) =>
+            !inject(Store).user() ||
+            !c.dirty ||
+            confirm(
+              "Discard unsaved setup changes? Saved drafts remain available.",
+            ),
+        ],
       },
       { path: "", pathMatch: "full", redirectTo: "overview" },
       {

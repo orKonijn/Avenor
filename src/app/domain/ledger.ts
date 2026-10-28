@@ -56,6 +56,7 @@ export function replay(transactions: Transaction[]) {
         "fee",
         "fx",
         "split",
+        "opening",
       ].includes(t.type)
     )
       throw new DomainError("Unsupported transaction type.");
@@ -106,12 +107,33 @@ export function replay(transactions: Transaction[]) {
         realized: "0",
         lots: [],
       });
+      if (t.type === "opening") {
+        if (!fee.isZero())
+          throw new DomainError(
+            "Opening holdings cannot include a cash fee. Include fees in known cost basis.",
+          );
+        if (
+          t.acquiredAt &&
+          (!Number.isFinite(Date.parse(t.acquiredAt)) ||
+            Date.parse(t.acquiredAt) > Date.parse(t.effectiveAt))
+        )
+          throw new DomainError(
+            "Acquisition date must be valid and no later than the opening date.",
+          );
+        p.lots.push({
+          transactionId: t.id,
+          quantity: quantity.toString(),
+          basis: t.basisUnknown ? null : amount.toString(),
+          acquiredAt: t.acquiredAt ?? null,
+        });
+      }
       if (t.type === "buy") {
         cashLeg(t.currency, amount.plus(fee).neg(), t.effectiveAt);
         p.lots.push({
           transactionId: t.id,
           quantity: quantity.toString(),
           basis: amount.plus(fee).toString(),
+          acquiredAt: t.effectiveAt,
         });
       }
       if (t.type === "sell") {
@@ -124,15 +146,23 @@ export function replay(transactions: Transaction[]) {
         for (const lot of p.lots) {
           const take = Decimal.min(remaining, lot.quantity);
           if (take.isZero()) continue;
-          const basis = D(lot.basis).mul(take).div(lot.quantity);
+          const basis =
+            lot.basis === null
+              ? null
+              : D(lot.basis).mul(take).div(lot.quantity);
+          if (basis === null) p.realized = null;
           lot.quantity = D(lot.quantity).minus(take).toString();
-          lot.basis = D(lot.basis).minus(basis).toString();
-          removed = removed.plus(basis);
+          lot.basis =
+            lot.basis === null || basis === null
+              ? null
+              : D(lot.basis).minus(basis).toString();
+          if (basis !== null) removed = removed.plus(basis);
           remaining = remaining.minus(take);
         }
-        p.realized = D(p.realized)
-          .plus(amount.minus(fee).minus(removed))
-          .toString();
+        p.realized =
+          p.realized === null
+            ? null
+            : D(p.realized).plus(amount.minus(fee).minus(removed)).toString();
         cashLeg(t.currency, amount.minus(fee), t.effectiveAt);
       }
       if (t.type === "split") {
@@ -145,7 +175,9 @@ export function replay(transactions: Transaction[]) {
       p.quantity = p.lots
         .reduce((sum, l) => sum.plus(l.quantity), D(0))
         .toString();
-      p.basis = p.lots.reduce((sum, l) => sum.plus(l.basis), D(0)).toString();
+      p.basis = p.lots.some((l) => l.basis === null)
+        ? null
+        : p.lots.reduce((sum, l) => sum.plus(l.basis!), D(0)).toString();
     }
   }
   return {
@@ -192,7 +224,8 @@ export function valueLedger(
           ? D(p.quantity).mul(asset.price).mul(r)
           : null;
       // Cross-currency basis needs transaction-date FX; current FX cannot substitute.
-      const cost = asset.currency === currency ? D(p.basis) : null;
+      const cost =
+        asset.currency === currency && p.basis !== null ? D(p.basis) : null;
       if (!cost) allBasis = false;
       else basis = basis.plus(cost);
       if (value === null) missing.push(asset.symbol);
@@ -203,7 +236,8 @@ export function valueLedger(
         value: value?.toString() ?? null,
         gain: value && cost ? value.minus(cost).toString() : null,
         weight: null as string | null,
-        averageCost: D(p.basis).div(p.quantity).toString(),
+        averageCost:
+          p.basis === null ? null : D(p.basis).div(p.quantity).toString(),
       };
     });
   const complete = missing.length === 0;
@@ -220,7 +254,7 @@ export function valueLedger(
       : cashValue.toString(),
     value: complete ? known.toString() : null,
     knownValue: known.toString(),
-    basis: basis.toString(),
+    basis: allBasis ? basis.toString() : null,
     gain:
       complete && allBasis
         ? holdings.reduce((s, h) => s.plus(h.gain || 0), D(0)).toString()
@@ -275,7 +309,10 @@ export function aggregateValuations(values: Valuation[]): Valuation {
   };
   for (const v of values) {
     result.knownValue = D(result.knownValue).plus(v.knownValue).toString();
-    result.basis = D(result.basis).plus(v.basis).toString();
+    result.basis =
+      result.basis === null || v.basis === null
+        ? null
+        : D(result.basis).plus(v.basis).toString();
     result.cashValue =
       result.cashValue !== null && v.cashValue !== null
         ? D(result.cashValue).plus(v.cashValue).toString()
@@ -296,8 +333,14 @@ export function aggregateValuations(values: Valuation[]): Valuation {
         continue;
       }
       old.quantity = D(old.quantity).plus(h.quantity).toString();
-      old.basis = D(old.basis).plus(h.basis).toString();
-      old.realized = D(old.realized).plus(h.realized).toString();
+      old.basis =
+        old.basis === null || h.basis === null
+          ? null
+          : D(old.basis).plus(h.basis).toString();
+      old.realized =
+        old.realized === null || h.realized === null
+          ? null
+          : D(old.realized).plus(h.realized).toString();
       old.value =
         old.value !== null && h.value !== null
           ? D(old.value).plus(h.value).toString()
@@ -307,7 +350,8 @@ export function aggregateValuations(values: Valuation[]): Valuation {
           ? D(old.gain).plus(h.gain).toString()
           : null;
       old.lots.push(...h.lots);
-      old.averageCost = D(old.basis).div(old.quantity).toString();
+      old.averageCost =
+        old.basis === null ? null : D(old.basis).div(old.quantity).toString();
     }
   }
   result.value = values.every((v) => v.value !== null)

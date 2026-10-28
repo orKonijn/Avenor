@@ -6,6 +6,7 @@ export type TransactionType =
   | "dividend"
   | "fee"
   | "fx"
+  | "opening"
   | "split";
 export interface Transaction {
   id: string;
@@ -22,6 +23,8 @@ export interface Transaction {
   rate?: string;
   revision: number;
   voided?: boolean;
+  basisUnknown?: boolean;
+  acquiredAt?: string | null;
 }
 export interface Portfolio {
   id: string;
@@ -48,13 +51,14 @@ export interface Asset {
 export interface Lot {
   transactionId: string;
   quantity: string;
-  basis: string;
+  basis: string | null;
+  acquiredAt?: string | null;
 }
 export interface Position {
   assetId: string;
   quantity: string;
-  basis: string;
-  realized: string;
+  basis: string | null;
+  realized: string | null;
   lots: Lot[];
 }
 export interface Holding extends Position {
@@ -62,7 +66,7 @@ export interface Holding extends Position {
   value: string | null;
   gain: string | null;
   weight: string | null;
-  averageCost: string;
+  averageCost: string | null;
 }
 export interface Valuation {
   holdings: Holding[];
@@ -70,7 +74,7 @@ export interface Valuation {
   cashValue: string | null;
   value: string | null;
   knownValue: string;
-  basis: string;
+  basis: string | null;
   gain: string | null;
   coverage: number;
   missing: string[];
@@ -82,6 +86,13 @@ export interface Watchlist {
   items: string[];
 }
 export interface AlertRule {
+  version?: number;
+  kind?: "price" | "portfolio-value" | "portfolio-drawdown";
+  portfolioId?: string;
+  currency?: string;
+  basis?: "quote-price" | "portfolio-value" | "close-to-close-net-flow";
+  previousClose?: string | null;
+  lastObservedAt?: string | null;
   id: string;
   assetId: string;
   direction: "above" | "below";
@@ -93,6 +104,13 @@ export interface AlertRule {
   state: string;
 }
 export interface Notification {
+  portfolioId?: string;
+  observedValue?: string;
+  threshold?: string;
+  observedAt?: string;
+  currency?: string;
+  provider?: string;
+  delaySeconds?: number;
   id: string;
   ruleId: string;
   title: string;
@@ -128,6 +146,7 @@ export interface User {
   verified: boolean;
 }
 export interface Workspace {
+  onboarding?: { portfolioId?: string; draft?: OpeningDraft };
   revision: number;
   portfolios: Portfolio[];
   transactions: Transaction[];
@@ -144,6 +163,17 @@ export interface Workspace {
     after: unknown;
   }[];
   followedThemes: string[];
+}
+export interface OpeningDraft {
+  date: string;
+  cash: string;
+  holdings: {
+    assetId: string;
+    quantity: string;
+    price: string;
+    basisUnknown: boolean;
+    acquiredAt: string | null;
+  }[];
 }
 export interface Bootstrap {
   user: User;
