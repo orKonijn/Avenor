@@ -16,6 +16,10 @@
 - Calculation/API/browser regression tests, CI checks, setup documentation, and a specification coverage/release checklist.
 - Root `AGENTS.md` containing the user's Git, changelog, branch, commit, code-review, and handoff workflow for future Codex work.
 
+### Fixed
+
+- Prevent archiving the first portfolio during opening-balance setup, which could otherwise leave setup unable to finish.
+
 ### Security
 
 - Object ownership, CSRF protection, same-site HttpOnly sessions, secure production cookies, password hashing, rate limits, CSP, single-use expiring recovery tokens, and revision-protected server state.

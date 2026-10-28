@@ -47,6 +47,14 @@ test("onboarding drafts persist, reject conflicting edits, complete atomically a
       onboarding: true,
     });
     const id = created.data.result.id;
+    const archive = await request(`/portfolios/${id}`, "PATCH", {
+      revision: created.data.result.revision,
+      archived: true,
+    });
+    assert.equal(archive.status, 422);
+    const afterArchive = await request("/session");
+    assert.equal(afterArchive.data.workspace.portfolios[0].archived, false);
+    assert.equal(afterArchive.data.workspace.revision, created.data.workspace.revision);
     assert.equal(
       (
         await request(`/portfolios/${id}/transactions`, "POST", {

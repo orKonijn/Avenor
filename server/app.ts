@@ -488,6 +488,10 @@ export function createApp(store = createStore()) {
         p.name = n;
       }
       if (req.body.archived) {
+        if (w.preferences.onboarding === 2 && w.onboarding?.portfolioId === p.id)
+          throw new DomainError(
+            "Finish opening-balance setup before archiving this portfolio.",
+          );
         const ledger = replay(
           w.transactions.filter((t) => t.portfolioId === p.id),
         );
