@@ -4,6 +4,9 @@
 
 ### Added
 
+- Browse archived portfolios, transactions, and audit history in a read-only view without changing active portfolio totals.
+- Filter holdings by quote currency and switch between mobile cards and a horizontally scrollable full table; both choices survive refresh through the page URL.
+
 - Resumable setup for preferences, interests, a first portfolio, and opening balances. Save a draft to continue after refresh; finishing records cash and holdings atomically.
 - Opening holdings with optional acquisition dates and unknown cost basis. Shares still have a value, while unavailable cost and gains remain explicitly unavailable until corrected.
 - Fixed-currency portfolio-value and cash-flow-adjusted daily-loss alerts, plus optional Notify now for already-satisfied price/value snapshots. Sample observations support deduplication, stale-data rejection, and reset/cooldown rules; continuous monitoring still requires provider ingestion.
@@ -17,6 +20,8 @@
 - Root `AGENTS.md` containing the user's Git, changelog, branch, commit, code-review, and handoff workflow for future Codex work.
 
 ### Fixed
+
+- Holdings cards and tables now share 25-row pagination and return to the first page after filtering. Sorting uses decimal values and keeps unavailable values last in either direction.
 
 - Prevent archiving the first portfolio during opening-balance setup, which could otherwise leave setup unable to finish.
 - Reject malformed acquisition dates in transaction requests before they can break holding details or editing.
@@ -43,3 +48,11 @@ Save an opening-balance draft and leave cost basis or acquisition date unknown.
 ![Portfolio-value alert with fixed USD currency and Notify now selected](docs/changelog/assets/unreleased/portfolio-alert.png)
 
 The rule keeps its observation currency even when display preferences change.
+
+![Archived portfolio with retained transactions and audit history](docs/changelog/assets/unreleased/archived-history.png)
+
+Archived portfolios preserve their records in a separate read-only history view.
+
+![Full holdings table on a 390-pixel screen with a USD filter](docs/changelog/assets/unreleased/holdings-mobile-table.png)
+
+Mobile users can switch to a scrollable table and compare every column.

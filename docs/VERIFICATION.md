@@ -20,3 +20,11 @@ Not performed: manual screen-reader testing, complete keyboard/zoom/device matri
 - Actual runtime screenshots are under `docs/changelog/assets/unreleased/`; desktop alert creation and mobile opening holdings were visually inspected.
 - One browser run overlapped a production rebuild and failed navigation. Running the complete browser suite after the build completed passed all eight tests. Keep build and browser execution sequential.
 - Independent targeted re-review confirmed all four continuation findings resolved: stale-close baselines, setup transaction locking, acquisition dates, and daily-loss threshold bounds. No remaining actionable findings in that scope.
+
+## Portfolio history and mobile holdings increment
+
+- Typecheck, 28 domain/API tests, and production build passed. Decimal sorting regression verifies precision beyond JavaScript numbers and missing-values-last behavior.
+- The complete 10-test browser suite passed, followed by all three portfolio-history browser tests after adding a 26-holding pagination fixture (11 unique browser tests total).
+- Verified archived history persistence and isolation from active totals; currency filter and table-mode refresh; cards/table pagination and filter reset; no page overflow at 767/390/320 px; axe checks for archive and mobile table.
+- Visually inspected actual archive and mobile-table screenshots in `docs/changelog/assets/unreleased/`.
+- Independent source review found no actionable correctness or security findings. Existing provider, identity, manual accessibility, and deployment limitations still apply.
