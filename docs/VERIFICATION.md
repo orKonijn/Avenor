@@ -1,0 +1,14 @@
+# Verification record
+
+Verified locally on 28 October 2026 with Node 24.19.0 and installed Chrome on Windows.
+
+- `npm run typecheck`: passed.
+- `npm test`: 17 tests passed, including the specification's decimal accounting fixtures, chronological offset ordering, FIFO/splits, missing FX/prices, aggregate holdings, ownership/CSRF, concurrent revisions, idempotency replay, single-use reset, verification, and alert crossing/cooldown.
+- `npm run build`: passed with no warnings. Initial output approximately 376 kB raw / 92 kB estimated transferred, plus lazy feature chunks and self-hosted font assets. These are build sizes, not measured page-load budgets.
+- `BROWSER_CHANNEL=chrome npx playwright test`: six tests passed against the production-served application. They cover navigation, sample reconciliation, theme persistence, portfolio/deposit/purchase/edit/audit, watchlists, alert notifications, mobile overflow at 390/320 px, committed-then-502 retry without duplication, and revoked-session private-state clearing.
+- Automated axe WCAG A/AA check on the overview: no violations reported. This is not a whole-application accessibility certification.
+- `npm audit --audit-level=high`: zero reported vulnerabilities.
+- Desktop light/dark and mobile screenshots were inspected. Production CSS loading under CSP was repaired during browser verification.
+- Independent code review identified timestamp-ordering, same-asset aggregation, split-fee, session-state, verification-resend, idempotency-retry, stale-response and account-switch issues. These were fixed and re-reviewed; the final targeted review found no remaining blockers in those changes.
+
+Not performed: manual screen-reader testing, complete keyboard/zoom/device matrix, provider integration/outage tests, a deployment penetration test, staging performance measurements, or a production release review. See `IMPLEMENTATION.md` for remaining product and operational work.

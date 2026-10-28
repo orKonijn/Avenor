@@ -1,0 +1,1 @@
+try { const mode = localStorage.getItem('avenor-theme') || 'system'; document.documentElement.dataset.theme = mode === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode; } catch {}
