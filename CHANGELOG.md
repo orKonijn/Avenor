@@ -1,69 +1,93 @@
 # Changelog
 
-## Unreleased
+## Unreleased — A clearer investment workspace
 
-### Added
+Set up your holdings, revisit portfolio history, and understand changes in value with visible data-quality limits.
 
-- Ledger-based analysis with selectable dates, daily closing values, external flows, period gain, daily TWR estimates, and an accessible source/quality table. Backdated corrections are reflected when history reloads.
-- Authenticated history API with portfolio ownership checks and a 366-day limit. Sample accounts use only the two explicit synthetic closes on 27–28 October 2026; real accounts never receive sample prices. Missing prices or FX remain gaps and block unsupported returns.
+### Highlights
 
-- Browse archived portfolios, transactions, and audit history in a read-only view without changing active portfolio totals.
-- Filter holdings by quote currency and switch between mobile cards and a horizontally scrollable full table; both choices survive refresh through the page URL.
+- Resume setup from a saved draft, including holdings whose cost basis is unknown.
+- Explore ledger-based history, archived records, and the full holdings table on mobile.
+- Follow price, portfolio-value, and daily-loss thresholds with in-app sample alerts.
 
-- Resumable setup for preferences, interests, a first portfolio, and opening balances. Save a draft to continue after refresh; finishing records cash and holdings atomically.
-- Opening holdings with optional acquisition dates and unknown cost basis. Shares still have a value, while unavailable cost and gains remain explicitly unavailable until corrected.
-- Fixed-currency portfolio-value and cash-flow-adjusted daily-loss alerts, plus optional Notify now for already-satisfied price/value snapshots. Sample observations support deduplication, stale-data rejection, and reset/cooldown rules; continuous monitoring still requires provider ingestion.
+### Release status
 
-
-- Angular investment workspace with responsive navigation, light/dark/system themes, sample overview, portfolios, analysis, discovery, asset detail, watchlists, alerts, notifications, and settings.
-- Persistent, isolated demo accounts and a server-authoritative decimal ledger with FIFO accounting, backdated validation, paired FX legs, split events, immutable correction history, and duplicate-save protection.
-- Holdings filters and allocation with explicit missing-data coverage; synthetic charts and sample quotes are labeled throughout.
-- Server-side sample price-crossing evaluation, recurring reset/cooldown rules, and in-app notification read state.
-- Calculation/API/browser regression tests, CI checks, setup documentation, and a specification coverage/release checklist.
-- Root `AGENTS.md` containing the user's Git, changelog, branch, commit, code-review, and handoff workflow for future Codex work.
-
-### Fixed
-
-- Holdings cards and tables now share 25-row pagination and return to the first page after filtering. Sorting uses decimal values and keeps unavailable values last in either direction.
-
-- Prevent archiving the first portfolio during opening-balance setup, which could otherwise leave setup unable to finish.
-- Reject malformed acquisition dates in transaction requests before they can break holding details or editing.
-
-### Security
-
-- Object ownership, CSRF protection, same-site HttpOnly sessions, secure production cookies, password hashing, rate limits, CSP, single-use expiring recovery tokens, and revision-protected server state.
-- Real registration remains disabled until an email adapter is configured. No production market feed or financial-history export is implied by the sample workspace.
+These changes are in development, not a published production release. The package version is 1.0.0; no numbered release or release date has been assigned. A future compatible feature release would target 1.1.0, subject to the API compatibility review below.
 
 ### Compatibility and migration
 
-The development API now accepts `opening` transactions. Cost basis, average cost, and realized gain may be `null` when an opening lot has unknown basis; clients must render unavailable values instead of treating them as zero. Existing saved workspaces remain readable without a database migration. No release or deployment is implied; package version remains 1.0.0.
+Existing saved workspaces remain readable without a database migration or configuration change.
 
-### Interface previews
+Development API clients must accept opening transactions. Cost basis, average cost, and realized gain can now be null when an opening holding has unknown cost. Display these values as unavailable, not zero. If this API becomes a supported public contract before release, assess these changes for a major version increment.
 
-![Preferences and interests in the setup workflow](docs/changelog/assets/unreleased/onboarding-preferences.png)
+The new authenticated /v1/history endpoint accepts a portfolio, currency, and date range of up to 366 days. It checks portfolio ownership and returns explicit gaps for unavailable historical prices or exchange rates.
 
-Choose display preferences and optional interests before creating the first portfolio.
+### Added
 
-![Opening holdings with unknown cost basis on a 390-pixel mobile screen](docs/changelog/assets/unreleased/onboarding-holdings-mobile.png)
+#### Start with what you already own
 
-Save an opening-balance draft and leave cost basis or acquisition date unknown.
+Choose display preferences and interests, create your first portfolio, and enter opening cash and shares. Save draft preserves unfinished balances across refreshes. Finishing records opening balances together, without treating existing shares as a new purchase.
+
+Leave acquisition dates or cost basis unknown when needed. Shares can still have a value; unavailable cost and gains stay unavailable until you correct the opening record.
+
+![Mobile opening-balance setup with unknown cost basis and Save draft](docs/changelog/assets/unreleased/onboarding-holdings-mobile.png)
+
+Opening setup on mobile: record what you know and save the rest for later.
+
+#### See history that follows your ledger
+
+Analysis now calculates daily closing values, external flows, period gain, and daily time-weighted return estimates from recorded transactions. Select dates, inspect exact values and sources, and see backdated corrections when history reloads.
+
+Sample accounts have only two synthetic closing snapshots, for 27–28 October 2026. Longer ranges show gaps. Missing observations are never replaced with today's prices, and incomplete periods cannot claim a complete return.
+
+![Analysis with beginning and ending values, period gain, daily return, and dated sources](docs/changelog/assets/unreleased/ledger-history.png)
+
+The sample day reconciles to $125,000 ending value and $850 gain; every observation identifies its synthetic source.
+
+#### Keep closed portfolios within reach
+
+Archived portfolios have a read-only transaction and audit history. Browsing them does not change active totals. Holdings also support currency filters and a mobile full-table view; filter and view choices survive refresh.
+
+![Archived portfolio with its retained transaction and audit history](docs/changelog/assets/unreleased/archived-history.png)
+
+A closed portfolio keeps its records accessible while remaining outside active totals.
+
+#### Follow the changes that matter
+
+Create price, fixed-currency portfolio-value, or cash-flow-adjusted daily-loss alerts. Notify now can deliver an in-app notification when an available price or value snapshot already meets the condition. Otherwise, rules wait for a fresh crossing, with duplicate prevention and recurring-rule reset and cooldown controls.
 
 ![Portfolio-value alert with fixed USD currency and Notify now selected](docs/changelog/assets/unreleased/portfolio-alert.png)
 
-The rule keeps its observation currency even when display preferences change.
+The observation currency stays fixed even if your display currency changes. Continuous monitoring still needs scheduled provider ingestion.
 
-![Archived portfolio with retained transactions and audit history](docs/changelog/assets/unreleased/archived-history.png)
+#### Find these notes inside Avenor
 
-Archived portfolios preserve their records in a separate read-only history view.
+The Changelog page is available from desktop navigation and the mobile More menu. It reads the same notes as this file and offers full-size screenshots without creating a separate copy of the release text.
 
-![Full holdings table on a 390-pixel screen with a USD filter](docs/changelog/assets/unreleased/holdings-mobile-table.png)
+### Changed
 
-Mobile users can switch to a scrollable table and compare every column.
+- Analysis value and return views now use ledger-based history. The overview chart remains a separately labeled illustrative sample.
+- Mobile cards and the full holdings table share 25-row pagination; filtering returns to the first page.
+- Holdings sorting preserves decimal precision and places unavailable values last in either direction.
 
-![Ledger history showing sample beginning and ending values, period gain, and daily return](docs/changelog/assets/unreleased/ledger-history.png)
+### Fixed
 
-Analysis now recalculates the selected portfolio's history from its ledger, with dated synthetic source labels.
+- Prevented archiving the first portfolio before opening-balance setup finishes, which could leave setup stuck.
+- Rejected malformed acquisition dates before they could break holding details or transaction editing.
+- Corrected opening capital valuation when a same-day stock split changes the share count, preventing a false gain.
+- Prevented older history responses from replacing the currently selected portfolio's results.
 
-![Mobile historical analysis with explicit unavailable metrics and a daily data table](docs/changelog/assets/unreleased/ledger-history-mobile.png)
+### Security
 
-Missing daily quotes remain gaps. A longer period cannot claim a complete return without all required observations.
+Workspaces are isolated by account. Server checks enforce ownership, revisions, duplicate-save protection, and session/CSRF controls. Transactions retain correction and void audit history. Real registration remains disabled until the email and identity configuration is supplied.
+
+### Known limitations
+
+- Quotes, themes, and the two dated closing snapshots are synthetic demonstrations. Real accounts do not receive sample historical prices. Licensed price history, FX, news, fundamentals, and total-return benchmarks are not connected.
+- Alerts can evaluate supplied sample observations, but continuous monitoring needs a server ingestion scheduler. Email and push delivery are unavailable.
+- Daily returns use an end-of-day flow estimate. Large net flows show a timing warning; matched transfers and detailed intraday flow treatment remain unfinished.
+- Production identity, account management, retention, backups, and deployment security/accessibility reviews remain launch requirements. This development app is not a production-ready financial service.
+
+### Verification
+
+The current application passed 36 calculation/API tests, 14 browser journeys, and the production build. The history increment also passed GitHub checks. Independent review findings were fixed and re-reviewed. Screenshots above were captured from the running app with sample data. Automated accessibility checks do not replace manual screen-reader and device reviews.

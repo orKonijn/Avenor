@@ -179,3 +179,6 @@ When finished, provide:
 5. A concise verification summary.
 
 Apply these rules throughout development so the changelog stays current as meaningful changes are completed.
+## Repository implementation
+
+CHANGELOG.md remains the single source of truth. Angular copies it and docs/changelog/assets into the app build; the Changelog page renders headings, paragraphs, lists, and local PNG screenshots with captions. Use those supported Markdown blocks; add renderer support and coverage before introducing a new format. Keep one summary, at most three highlights, compatibility guidance, feature-grouped visuals, and explicit known limitations. Rebuild and verify both desktop and mobile after changing the notes.
