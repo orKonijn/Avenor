@@ -1,6 +1,6 @@
 import { Injectable, signal, computed, inject } from "@angular/core";
 import { Router } from "@angular/router";
-import { Bootstrap, Workspace, Asset } from "../domain/models";
+import { Bootstrap, Workspace, Asset, Watchlist } from "../domain/models";
 @Injectable({ providedIn: "root" })
 export class Store {
   readonly router = inject(Router);
@@ -142,6 +142,38 @@ export class Store {
     } finally {
       this.busy.set(false);
     }
+  }
+  async updateWatchlist(
+    w: Watchlist,
+    method: "PATCH" | "DELETE",
+    changes: object,
+    message: string,
+  ) {
+    if (this.busy()) return null;
+    const ownerId = this.user()?.id;
+    const result = await this.mutate(
+      "/watchlists/" + w.id,
+      method,
+      { ...changes, revision: w.revision ?? 0 },
+      message,
+    );
+    if (
+      !result &&
+      this.user()?.id === ownerId &&
+      [404, 409].includes(this.lastErrorStatus)
+    ) {
+      this.busy.set(true);
+      try {
+        await this.refresh();
+        if (!this.error() && this.user()?.id === ownerId)
+          this.error.set(
+            "This watchlist changed in another tab. The latest lists are now loaded. Your change was not applied. Review the list before trying again.",
+          );
+      } finally {
+        this.busy.set(false);
+      }
+    }
+    return result;
   }
   async refresh() {
     try {
