@@ -4,6 +4,9 @@
 
 ### Added
 
+- Ledger-based analysis with selectable dates, daily closing values, external flows, period gain, daily TWR estimates, and an accessible source/quality table. Backdated corrections are reflected when history reloads.
+- Authenticated history API with portfolio ownership checks and a 366-day limit. Sample accounts use only the two explicit synthetic closes on 27–28 October 2026; real accounts never receive sample prices. Missing prices or FX remain gaps and block unsupported returns.
+
 - Browse archived portfolios, transactions, and audit history in a read-only view without changing active portfolio totals.
 - Filter holdings by quote currency and switch between mobile cards and a horizontally scrollable full table; both choices survive refresh through the page URL.
 
@@ -56,3 +59,11 @@ Archived portfolios preserve their records in a separate read-only history view.
 ![Full holdings table on a 390-pixel screen with a USD filter](docs/changelog/assets/unreleased/holdings-mobile-table.png)
 
 Mobile users can switch to a scrollable table and compare every column.
+
+![Ledger history showing sample beginning and ending values, period gain, and daily return](docs/changelog/assets/unreleased/ledger-history.png)
+
+Analysis now recalculates the selected portfolio's history from its ledger, with dated synthetic source labels.
+
+![Mobile historical analysis with explicit unavailable metrics and a daily data table](docs/changelog/assets/unreleased/ledger-history-mobile.png)
+
+Missing daily quotes remain gaps. A longer period cannot claim a complete return without all required observations.

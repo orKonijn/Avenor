@@ -28,3 +28,10 @@ Not performed: manual screen-reader testing, complete keyboard/zoom/device matri
 - Verified archived history persistence and isolation from active totals; currency filter and table-mode refresh; cards/table pagination and filter reset; no page overflow at 767/390/320 px; axe checks for archive and mobile table.
 - Visually inspected actual archive and mobile-table screenshots in `docs/changelog/assets/unreleased/`.
 - Independent source review found no actionable correctness or security findings. Existing provider, identity, manual accessibility, and deployment limitations still apply.
+
+## Ledger-history increment
+
+- Typecheck, 35 domain/API tests, and warning-free production build passed. History fixtures cover fee/flow neutrality, corrections, unknown-basis opening capital, same-day splits, missing closes, dated FX, zero bases, date limits and endpoint ownership.
+- All 13 browser journeys passed; both history journeys passed again after review fixes. Verified sample reconciliation, unavailable data, currency changes, mobile layout, axe accessibility and stale portfolio-response suppression.
+- Independent review identified a same-day split/opening-flow calculation defect. Fixed with regression coverage and re-reviewed with no remaining actionable findings.
+- Actual desktop/mobile history screenshots are included in the Unreleased changelog. No live historical provider or production deployment was tested.

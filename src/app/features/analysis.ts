@@ -1,13 +1,14 @@
+import { LedgerHistoryPanel } from "./history";
 import { Component, inject, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, RouterLink } from "@angular/router";
 import { Store } from "../core/store";
 import { Empty, Source } from "../shared/ui";
-import { Chart, sampleHistory } from "../shared/chart";
+import { sampleHistory } from "../shared/chart";
 import { maxDrawdown } from "../domain/ledger";
 @Component({
   standalone: true,
-  imports: [FormsModule, RouterLink, Empty, Source, Chart],
+  imports: [FormsModule, RouterLink, Empty, Source, LedgerHistoryPanel],
   template: `<div class="page-heading">
       <div>
         <span class="eyebrow">LOOK BEYOND THE BALANCE</span>
@@ -40,47 +41,7 @@ import { maxDrawdown } from "../domain/ledger";
       }
     </div>
     @if (tab() === "value" || tab() === "returns") {
-      <section class="panel">
-        <div class="panel-heading">
-          <div>
-            <h2>
-              {{
-                tab() === "value"
-                  ? "Your opening sample, over time"
-                  : "Return, with the cash flows removed"
-              }}
-            </h2>
-            <p>January–October 2026 · separate illustrative fixture</p>
-          </div>
-          <span class="badge">Sample history</span>
-        </div>
-        <av-chart [returns]="tab() === 'returns'" /><av-source
-          text="Synthetic fixture · no external flows after opening · geometrically linked returns"
-        />
-      </section>
-      <div class="two-columns section-gap">
-        <section class="panel padded">
-          <h2>How this is calculated</h2>
-          <p>
-            Daily TWR estimate: (ending value − end-of-day external flow) ÷
-            previous close − 1. Subperiod returns are compounded, not added.
-            Dividends retained as cash are investment income.
-          </p>
-          <p>
-            This fixture has no subsequent external flows. Its cumulative return
-            is {{ s.percent((125000 / 119800 - 1) * 100) }}. Your edited ledger
-            is not represented in this illustrative history.
-          </p>
-        </section>
-        <section class="panel padded">
-          <h2>Benchmark comparison</h2>
-          <av-empty
-            icon="chart"
-            title="Aligned history needed"
-            description="Connect a licensed total-return benchmark with matching dates and currency. A price-only index would not be a fair comparison."
-          />
-        </section>
-      </div>
+      <av-ledger-history />
     }
     @if (tab() === "allocation") {
       <section class="panel">

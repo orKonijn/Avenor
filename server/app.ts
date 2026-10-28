@@ -12,6 +12,8 @@ import { resolve } from "node:path";
 import { createStore } from "./store";
 import { assets, themes, newWorkspace, AS_OF } from "./sample";
 import { completeOnboarding, normalizeOpeningDraft } from "./onboarding";
+import { ledgerHistory } from "../src/app/domain/history";
+import { sampleCloses } from "./history";
 import {
   D,
   decimal,
@@ -488,7 +490,10 @@ export function createApp(store = createStore()) {
         p.name = n;
       }
       if (req.body.archived) {
-        if (w.preferences.onboarding === 2 && w.onboarding?.portfolioId === p.id)
+        if (
+          w.preferences.onboarding === 2 &&
+          w.onboarding?.portfolioId === p.id
+        )
           throw new DomainError(
             "Finish opening-balance setup before archiving this portfolio.",
           );
@@ -519,6 +524,26 @@ export function createApp(store = createStore()) {
         assets,
         p.revision,
         String(req.query["currency"] || w.preferences.currency),
+      ),
+    );
+  });
+  app.get("/v1/history", (req, res) => {
+    const w = store.workspace(res.locals["user"].id);
+    const id = String(req.query["portfolioId"] || "all");
+    if (id !== "all") portfolio(w, id);
+    const currency = String(req.query["currency"] || w.preferences.currency);
+    if (!["USD", "EUR", "GBP"].includes(currency))
+      throw new DomainError("Choose a supported currency.");
+    send(
+      res,
+      ledgerHistory(
+        w.transactions.filter((t) => id === "all" || t.portfolioId === id),
+        assets,
+        res.locals["user"].demo ? sampleCloses : [],
+        String(req.query["from"] || ""),
+        String(req.query["to"] || ""),
+        currency,
+        w.revision,
       ),
     );
   });
@@ -582,10 +607,14 @@ export function createApp(store = createStore()) {
       )
         throw new DomainError("Choose a valid transaction date.");
       if (
-        t.acquiredAt !== null && t.acquiredAt !== undefined &&
-        (typeof t.acquiredAt !== "string" || !Number.isFinite(Date.parse(t.acquiredAt)))
+        t.acquiredAt !== null &&
+        t.acquiredAt !== undefined &&
+        (typeof t.acquiredAt !== "string" ||
+          !Number.isFinite(Date.parse(t.acquiredAt)))
       )
-        throw new DomainError("Choose a valid acquisition date or leave it unknown.");
+        throw new DomainError(
+          "Choose a valid acquisition date or leave it unknown.",
+        );
       t.effectiveAt = new Date(t.effectiveAt).toISOString();
       if (["buy", "sell", "split", "dividend", "opening"].includes(t.type)) {
         const a = assets.find((a) => a.id === t.assetId);
