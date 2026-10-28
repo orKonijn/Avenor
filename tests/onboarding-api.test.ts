@@ -109,6 +109,14 @@ test("onboarding drafts persist, reject conflicting edits, complete atomically a
     const opening = finish.data.workspace.transactions.find(
       (t: any) => t.type === "opening",
     );
+    for (const acquiredAt of [123, false, {}, "not-a-date"]) {
+      const invalid = await request(`/transactions/${opening.id}`, "PATCH", {
+        ...opening,
+        acquiredAt,
+        revision: finish.data.workspace.portfolios[0].revision,
+      });
+      assert.equal(invalid.status, 422);
+    }
     const corrected = await request(`/transactions/${opening.id}`, "PATCH", {
       ...opening,
       basisUnknown: false,

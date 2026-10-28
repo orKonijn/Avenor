@@ -19,6 +19,7 @@
 ### Fixed
 
 - Prevent archiving the first portfolio during opening-balance setup, which could otherwise leave setup unable to finish.
+- Reject malformed acquisition dates in transaction requests before they can break holding details or editing.
 
 ### Security
 

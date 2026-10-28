@@ -581,6 +581,11 @@ export function createApp(store = createStore()) {
         !Number.isFinite(Date.parse(t.effectiveAt))
       )
         throw new DomainError("Choose a valid transaction date.");
+      if (
+        t.acquiredAt !== null && t.acquiredAt !== undefined &&
+        (typeof t.acquiredAt !== "string" || !Number.isFinite(Date.parse(t.acquiredAt)))
+      )
+        throw new DomainError("Choose a valid acquisition date or leave it unknown.");
       t.effectiveAt = new Date(t.effectiveAt).toISOString();
       if (["buy", "sell", "split", "dividend", "opening"].includes(t.type)) {
         const a = assets.find((a) => a.id === t.assetId);
