@@ -42,3 +42,9 @@ Not performed: manual screen-reader testing, complete keyboard/zoom/device matri
 - 36 unit/API tests, build, and all 14 browser journeys passed. Changelog checks cover source text, four screenshot loads, section links, mobile navigation, overflow and axe accessibility.
 - Independent review found no actionable issues; accessibility testing identified and fixed missing underlines on screenshot links.
 - Desktop and mobile page captures: [desktop](changelog/changelog-page-desktop.png), [mobile](changelog/changelog-page-mobile.png). Historical screenshot assets were preserved.
+
+## Linked portfolio transfers and visible versions
+
+- 40 unit/API tests verify pair integrity, ownership, duplicate replay, revisions, insufficient funds, setup/archive restrictions, backdated replay, aggregate flow treatment, and dependent-activity void rejection.
+- Transfer browser journeys verify receipt links, pair voids, uncertain-save retries, and receipt isolation during browser Back; the changelog asserts current version 1.0.0 and planned 1.1.0 Unreleased.
+- Independent review identified pending-operation route reuse. Fixed with a browser regression and targeted re-review. Same-currency cash only; no transfer FX or bundled fees.

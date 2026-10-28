@@ -15,6 +15,19 @@ const routes: Routes = [
     canActivate: [guard],
     children: [
       {
+        path: "transfers/:id",
+        loadComponent: () =>
+          import("./app/features/transfers").then((m) => m.TransfersPage),
+        canDeactivate: [
+          (c: any) =>
+            !inject(Store).user() ||
+            !c.dirty ||
+            confirm(
+              "Leave this transfer? Unsaved details or an uncertain save may need reconciliation.",
+            ),
+        ],
+      },
+      {
         path: "changelog",
         loadComponent: () =>
           import("./app/features/changelog").then((m) => m.ChangelogPage),

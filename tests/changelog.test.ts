@@ -5,7 +5,7 @@ import { parseChangelog } from "../src/app/domain/changelog";
 test("release-note screenshot references exist and only local assets can become images", () => {
   const blocks = parseChangelog(readFileSync("CHANGELOG.md", "utf8"));
   const pictures = blocks.filter((b) => b.kind === "image");
-  assert.equal(pictures.length, 4);
+  assert.equal(pictures.length, 5);
   for (const p of pictures) {
     assert.ok(existsSync(p.src!.slice(1)));
     assert.ok(p.text);

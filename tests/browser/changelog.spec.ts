@@ -10,12 +10,13 @@ test("changelog uses repository notes, loads screenshots and works on mobile", a
   await page.getByRole("link", { name: "Changelog", exact: true }).click();
   await expect(
     page.getByRole("heading", {
-      name: "Unreleased — A clearer investment workspace",
+      name: "Version 1.1.0 — Unreleased",
     }),
   ).toBeVisible();
   await expect(page.getByRole("article")).toContainText("1.0.0");
+  await expect(page.locator(".release-version")).toContainText("Current app version: 1.0.0");
   const images = page.getByRole("article").locator("img");
-  await expect(images).toHaveCount(4);
+  await expect(images).toHaveCount(5);
   for (const img of await images.all()) {
     await img.scrollIntoViewIfNeeded();
     await expect
@@ -48,7 +49,7 @@ test("changelog uses repository notes, loads screenshots and works on mobile", a
   await page.getByRole("link", { name: "Changelog", exact: true }).click();
   await expect(
     page.getByRole("heading", {
-      name: "Unreleased — A clearer investment workspace",
+      name: "Version 1.1.0 — Unreleased",
     }),
   ).toBeVisible();
   expect(

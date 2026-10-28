@@ -14,6 +14,7 @@ import { assets, themes, newWorkspace, AS_OF } from "./sample";
 import { completeOnboarding, normalizeOpeningDraft } from "./onboarding";
 import { ledgerHistory } from "../src/app/domain/history";
 import { sampleCloses } from "./history";
+import { recordTransfer, voidTransfer } from "./transfers";
 import {
   D,
   decimal,
@@ -567,6 +568,10 @@ export function createApp(store = createStore()) {
           : w.transactions.find((t) => t.id === req.params["id"]);
       if (mode !== "new" && !old)
         throw new DomainError("Transaction not found.", "NOT_FOUND", 404);
+      if (old?.transferId || req.body.transferId)
+        throw new DomainError(
+          "Use the linked transfer to change both cash legs together.",
+        );
       const p = portfolio(w, old?.portfolioId || String(req.params["id"]));
       if (w.preferences.onboarding === 2 && w.onboarding?.portfolioId === p.id)
         throw new DomainError(
@@ -633,6 +638,14 @@ export function createApp(store = createStore()) {
   }
   app.post("/v1/portfolios/:id/transactions", (req, res) =>
     transactionChange(req, res, "new"),
+  );
+  app.post("/v1/transfers", (req, res) =>
+    mutate(req, res, (w) => recordTransfer(w, req.body)),
+  );
+  app.post("/v1/transfers/:id/void", (req, res) =>
+    mutate(req, res, (w) =>
+      voidTransfer(w, String(req.params["id"]), req.body),
+    ),
   );
   app.patch("/v1/transactions/:id", (req, res) =>
     transactionChange(req, res, "edit"),

@@ -9,6 +9,12 @@ import { parseChangelog, NoteBlock } from "../domain/changelog";
         <span class="eyebrow">THE DETAILS BEHIND THE PROGRESS</span>
         <h1>What's new in Avenor<span class="accent">.</span></h1>
         <p>Changes, screenshots, and what they mean for your workspace.</p>
+        @if (currentVersion()) {
+          <div class="release-version">
+            <strong>{{ currentVersion() }}</strong
+            ><span class="badge">Development build</span>
+          </div>
+        }
       </div>
       <a
         class="button secondary"
@@ -94,6 +100,14 @@ export class ChangelogPage {
     event.preventDefault();
     document.getElementById(id)?.scrollIntoView();
   }
+  currentVersion() {
+    return (
+      this.blocks().find(
+        (b) =>
+          b.kind === "paragraph" && b.text?.startsWith("Current app version:"),
+      )?.text || ""
+    );
+  }
   blocks = signal<NoteBlock[]>([]);
   loading = signal(false);
   error = signal("");
@@ -107,7 +121,7 @@ export class ChangelogPage {
       const r = await fetch("/changelog/CHANGELOG.md");
       if (!r.ok) throw new Error();
       const text = await r.text();
-      if (!text.includes("## Unreleased")) throw new Error();
+      if (!/^## .*Unreleased/m.test(text)) throw new Error();
       this.blocks.set(parseChangelog(text));
     } catch {
       this.error.set("Release notes could not be loaded. Please try again.");
