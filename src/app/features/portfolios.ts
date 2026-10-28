@@ -18,6 +18,9 @@ import { Icon, Source, Empty } from "../shared/ui";
         <p>Every holding, every transaction. All in perspective.</p>
       </div>
       <div class="inline-controls">
+        <a class="button secondary" routerLink="/transfers/new"
+          >Transfer cash</a
+        >
         <a class="button secondary" routerLink="/portfolios/archived"
           >Archived portfolios</a
         >
@@ -398,7 +401,13 @@ import { Icon, Source, Empty } from "../shared/ui";
                     </td>
                     <td class="numeric">{{ s.money(t.fee, t.currency) }}</td>
                     <td>
-                      @if (!t.voided) {
+                      @if (t.transferId) {
+                        <a
+                          class="button text"
+                          [routerLink]="['/transfers', t.transferId]"
+                          >View transfer</a
+                        >
+                      } @else if (!t.voided) {
                         <a
                           class="button text"
                           [routerLink]="['/transactions', t.id, 'edit']"

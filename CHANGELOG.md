@@ -1,12 +1,16 @@
 # Changelog
 
-## Unreleased — A clearer investment workspace
+## Version 1.1.0 — Unreleased
+
+Current app version: 1.0.0
+
+A clearer investment workspace — holdings, history, and connected cash.
 
 Set up your holdings, revisit portfolio history, and understand changes in value with visible data-quality limits.
 
 ### Highlights
 
-- Resume setup from a saved draft, including holdings whose cost basis is unknown.
+- Transfer cash between your portfolios with two linked records and no change to aggregate external contributions.
 - Explore ledger-based history, archived records, and the full holdings table on mobile.
 - Follow price, portfolio-value, and daily-loss thresholds with in-app sample alerts.
 
@@ -23,6 +27,17 @@ Development API clients must accept opening transactions. Cost basis, average co
 The new authenticated /v1/history endpoint accepts a portfolio, currency, and date range of up to 366 days. It checks portfolio ownership and returns explicit gaps for unavailable historical prices or exchange rates.
 
 ### Added
+
+#### Move cash between portfolios
+
+Transfer a cash amount between two active portfolios in the same currency. Both records are saved together, with duplicate-save protection and balance/revision checks. Each portfolio sees its own contribution or withdrawal; aggregate history excludes the matched pair from external flows.
+
+Review either side from the transfer receipt. To correct it, void both records together and enter a replacement. Voiding is blocked if later activity relies on the destination cash. Cross-currency transfers and transfer fees are not included; record currency conversion or fees separately.
+
+
+![Recorded cash transfer showing the source, destination, and linked records](docs/changelog/assets/unreleased/portfolio-transfer.png)
+
+A single receipt connects both portfolios. Corrections void the pair together, preserving the audit trail.
 
 #### Start with what you already own
 
@@ -76,6 +91,7 @@ The Changelog page is available from desktop navigation and the mobile More menu
 - Rejected malformed acquisition dates before they could break holding details or transaction editing.
 - Corrected opening capital valuation when a same-day stock split changes the share count, preventing a false gain.
 - Prevented older history responses from replacing the currently selected portfolio's results.
+- Kept uncertain transfer retries bound to their original receipt during browser navigation.
 
 ### Security
 
@@ -85,9 +101,9 @@ Workspaces are isolated by account. Server checks enforce ownership, revisions, 
 
 - Quotes, themes, and the two dated closing snapshots are synthetic demonstrations. Real accounts do not receive sample historical prices. Licensed price history, FX, news, fundamentals, and total-return benchmarks are not connected.
 - Alerts can evaluate supplied sample observations, but continuous monitoring needs a server ingestion scheduler. Email and push delivery are unavailable.
-- Daily returns use an end-of-day flow estimate. Large net flows show a timing warning; matched transfers and detailed intraday flow treatment remain unfinished.
+- Daily returns use an end-of-day flow estimate. Large net flows show a timing warning; detailed intraday flow treatment remains unfinished. Matched same-currency transfers are excluded from aggregate external flows.
 - Production identity, account management, retention, backups, and deployment security/accessibility reviews remain launch requirements. This development app is not a production-ready financial service.
 
 ### Verification
 
-The current application passed 36 calculation/API tests, 14 browser journeys, and the production build. The history increment also passed GitHub checks. Independent review findings were fixed and re-reviewed. Screenshots above were captured from the running app with sample data. Automated accessibility checks do not replace manual screen-reader and device reviews.
+The current application passed 40 calculation/API tests, 17 browser journeys, and the production build. The history increment also passed GitHub checks. Independent review findings were fixed and re-reviewed. Screenshots above were captured from the running app with sample data. Automated accessibility checks do not replace manual screen-reader and device reviews.

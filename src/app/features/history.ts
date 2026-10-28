@@ -170,9 +170,9 @@ import { LedgerHistory } from "../domain/history";
         </p>
         <p>
           No historical prices are carried forward. Cash flows use dated closing
-          FX under the end-of-day estimate. Matched interportfolio transfers and
-          licensed total-return benchmarks are not yet supported. Ledger
-          revision {{ h.revision }}.
+          FX under the end-of-day estimate. Matched same-currency transfers are
+          excluded from aggregate external flows. Licensed total-return
+          benchmarks are not yet supported. Ledger revision {{ h.revision }}.
         </p>
       </section>
     }

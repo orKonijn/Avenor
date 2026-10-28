@@ -64,6 +64,33 @@ export function ledgerHistory(
 ): LedgerHistory {
   const dates = historyDates(from, to);
   const portfolios = [...new Set(transactions.map((t) => t.portfolioId))];
+  const transferGroups = new Map<string, Transaction[]>();
+  for (const t of transactions.filter((t) => !t.voided && t.transferId)) {
+    const group = transferGroups.get(t.transferId!) || [];
+    group.push(t);
+    transferGroups.set(t.transferId!, group);
+  }
+  const internalTransfers = new Set(
+    [...transferGroups.entries()]
+      .filter(([, pair]) => {
+        const debit = pair.find((t) => t.type === "withdrawal"),
+          credit = pair.find((t) => t.type === "deposit");
+        return (
+          pair.length === 2 &&
+          debit &&
+          credit &&
+          debit.portfolioId !== credit.portfolioId &&
+          debit.currency === credit.currency &&
+          Date.parse(debit.effectiveAt) === Date.parse(credit.effectiveAt) &&
+          D(debit.quantity)
+            .mul(debit.price)
+            .eq(D(credit.quantity).mul(credit.price)) &&
+          D(debit.fee).isZero() &&
+          D(credit.fee).isZero()
+        );
+      })
+      .map(([id]) => id),
+  );
   const rows: HistoryRow[] = [];
   let previous: string | null = null;
   let beginningValue: string | null = null;
@@ -103,6 +130,7 @@ export function ledgerHistory(
         new Date(t.effectiveAt).toISOString().slice(0, 10) === date &&
         ["deposit", "withdrawal", "opening"].includes(t.type),
     )) {
+      if (t.transferId && internalTransfers.has(t.transferId)) continue;
       const fx =
         t.currency === currency
           ? "1"

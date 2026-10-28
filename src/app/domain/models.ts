@@ -25,6 +25,7 @@ export interface Transaction {
   voided?: boolean;
   basisUnknown?: boolean;
   acquiredAt?: string | null;
+  transferId?: string;
 }
 export interface Portfolio {
   id: string;
