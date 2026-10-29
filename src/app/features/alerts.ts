@@ -24,9 +24,13 @@ import { AlertRule } from "../domain/models";
     <div class="callout section-gap">
       <av-icon name="info" />
       <p>
-        Sample observations are evaluated on the server. Continuous monitoring
-        still requires licensed data and scheduled ingestion. Missing or stale
-        valuations cannot trigger a rule.
+        {{
+          s.user()?.demo
+            ? "Sample observations are evaluated on the server."
+            : "Notify now can use an available provider snapshot."
+        }}
+        Continuous alert monitoring is not enabled. Missing or stale valuations
+        cannot trigger a rule.
       </p>
     </div>
     @if (creating()) {
@@ -93,7 +97,7 @@ import { AlertRule } from "../domain/models";
             @if (!editId && form.controls.kind.value !== "portfolio-drawdown") {
               <label class="check-label span-2"
                 ><input type="checkbox" formControlName="notifyNow" />Notify now
-                if the available sample snapshot already satisfies this
+                if the available quote snapshot already satisfies this
                 condition</label
               >
             }
@@ -104,7 +108,7 @@ import { AlertRule } from "../domain/models";
               close. Deposits and withdrawals do not count as investment loss.
               This is a close-to-close measure, not peak-to-trough drawdown. Two
               closes establish the first metric; a later crossing triggers the
-              rule. Sample close dates use UTC.
+              rule. Close dates use UTC.
             </p>
           } @else {
             <p class="muted section-gap">

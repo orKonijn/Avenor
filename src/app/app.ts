@@ -109,7 +109,7 @@ import { Icon, Logo } from "./shared/ui";
           </div>
           <div class="header-actions">
             <span class="sample-badge">{{
-              s.user()?.demo ? "Sample workspace" : "Sample market feed"
+              s.user()?.demo ? "Sample workspace" : "Personal workspace"
             }}</span
             ><button
               class="icon-button"
@@ -155,7 +155,14 @@ import { Icon, Logo } from "./shared/ui";
         </main>
         <footer class="app-footer">
           <span>A little clarity. A better perspective.</span
-          ><span>Sample market data · Tracking, not trading.</span>
+          ><span
+            >{{
+              s.user()?.demo
+                ? "Sample market data"
+                : "Provider quotes when available"
+            }}
+            · Tracking, not trading.</span
+          >
         </footer>
       </div>
       <nav class="mobile-nav" aria-label="Mobile navigation">

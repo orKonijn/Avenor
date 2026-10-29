@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: avenor-private
+    runtime: node
+    plan: 0.5c-512mb
+    region: frankfurt
+    branch: main
+    autoDeployTrigger: off
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    disk:
+      name: avenor-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 24.19.0
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: DATABASE_PATH
+        value: /var/data/avenor.sqlite
+      - key: TRUST_PROXY_HOPS
+        value: 1
+      - key: ENABLE_LOCAL_ACCOUNTS
+        value: "true"
+      - key: ENABLE_DEMO
+        value: "false"
+      - key: MARKET_DATA_USE
+        value: personal
+      - key: PRIVATE_ACCOUNT_EMAILS
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: TWELVE_DATA_API_KEY
+        sync: false

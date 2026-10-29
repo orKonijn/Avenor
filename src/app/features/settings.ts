@@ -159,9 +159,14 @@ import { Icon, Empty } from "../shared/ui";
           <av-icon name="info" />
           <h2>Clarity includes the gaps.</h2>
           <p>
-            Only USD sample quotes are available. If you choose EUR or GBP,
-            valuations requiring an unavailable FX rate are marked incomplete.
-            We never substitute an assumed exchange rate.
+            {{
+              s.user()?.demo
+                ? "Only USD sample quotes are available."
+                : "The initial provider catalog covers six USD instruments."
+            }}
+            If you choose EUR or GBP, valuations requiring an unavailable FX
+            rate are marked incomplete. We never substitute an assumed exchange
+            rate.
           </p>
           <p>
             System appearance follows your device. Explicit Light or Dark stays

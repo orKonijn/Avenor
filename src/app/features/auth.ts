@@ -1,4 +1,4 @@
-import { Component, inject } from "@angular/core";
+import { Component, inject, signal } from "@angular/core";
 import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms";
 import { ActivatedRoute, Router, RouterLink } from "@angular/router";
 import { Store } from "../core/store";
@@ -119,24 +119,32 @@ import { Icon, Logo } from "../shared/ui";
             }}<av-icon name="arrow" />
           </button>
         </form>
-        <div class="or-divider"><span>or take a look around</span></div>
-        <button
-          class="button secondary full"
-          [disabled]="s.busy()"
-          (click)="demo()"
-        >
-          Explore the sample workspace <av-icon name="arrow" />
-        </button>
-        <button
-          class="button text full"
-          [disabled]="s.busy()"
-          (click)="emptyDemo()"
-        >
-          Start an empty sample workspace
-        </button>
-        <p class="auth-caption">
-          No account needed. Sample data, real possibilities.
-        </p>
+        @if (authConfig().demo) {
+          <div class="or-divider"><span>or take a look around</span></div>
+          <button
+            class="button secondary full"
+            [disabled]="s.busy()"
+            (click)="demo()"
+          >
+            Explore the sample workspace <av-icon name="arrow" />
+          </button>
+          <button
+            class="button text full"
+            [disabled]="s.busy()"
+            (click)="emptyDemo()"
+          >
+            Start an empty sample workspace
+          </button>
+          <p class="auth-caption">
+            No account needed. Sample data, real possibilities.
+          </p>
+        }
+        @if (authConfig().private) {
+          <p class="callout">
+            Private personal workspace. Only the owner's approved email can
+            register and sign in.
+          </p>
+        }
         <button class="button text full" (click)="resend()">
           Resend email verification
         </button>
@@ -161,6 +169,7 @@ export class AuthPage {
   router = inject(Router);
   route = inject(ActivatedRoute);
   fb = inject(FormBuilder);
+  authConfig = signal({ demo: false, registration: false, private: false });
   mode = "login";
   show = false;
   form = this.fb.nonNullable.group({
@@ -170,6 +179,12 @@ export class AuthPage {
     terms: [false],
   });
   constructor() {
+    void this.s
+      .request<{ demo: boolean; registration: boolean; private: boolean }>(
+        "/auth/config",
+      )
+      .then((config) => this.authConfig.set(config))
+      .catch(() => {});
     this.route.paramMap.subscribe((p) => {
       this.mode = p.get("mode") || "login";
       this.s.error.set("");

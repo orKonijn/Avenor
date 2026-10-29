@@ -1,4 +1,5 @@
-import { Component, input, computed } from "@angular/core";
+import { Component, input, computed, inject } from "@angular/core";
+import { Store } from "../core/store";
 @Component({
   selector: "av-icon",
   standalone: true,
@@ -102,11 +103,20 @@ export class Logo {}
   standalone: true,
   imports: [Icon],
   template: `<div class="source-line">
-    <av-icon name="info" /><span>{{ text() }}</span>
+    <av-icon name="info" /><span>{{ text() || source() }}</span>
   </div>`,
 })
 export class Source {
-  text = input("Sample data · 28 Oct 2026, 16:00 UTC · USD · not a live quote");
+  text = input("");
+  private s = inject(Store);
+  source = computed(() => {
+    if (this.s.user()?.demo)
+      return "Sample data · 28 Oct 2026, 16:00 UTC · USD · not a live quote";
+    const m = this.s.state()?.market;
+    return m?.asOf
+      ? `${m.source} · oldest available quote ${m.asOf} · delayed snapshot; refresh to load updates`
+      : "Market quotes unavailable · no sample prices substituted";
+  });
 }
 @Component({
   selector: "av-empty",

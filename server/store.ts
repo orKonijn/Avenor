@@ -11,6 +11,8 @@ export function createStore(
     CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY,email TEXT UNIQUE NOT NULL,name TEXT NOT NULL,password TEXT NOT NULL,verified INTEGER NOT NULL,demo INTEGER NOT NULL,workspace TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY,userId TEXT NOT NULL,csrf TEXT NOT NULL,expires INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS tokens (hash TEXT PRIMARY KEY,userId TEXT NOT NULL,kind TEXT NOT NULL,expires INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS email_outbox (id TEXT PRIMARY KEY,userId TEXT NOT NULL,kind TEXT NOT NULL,tokenHash TEXT NOT NULL,email TEXT,url TEXT,status TEXT NOT NULL DEFAULT 'pending',attempts INTEGER NOT NULL DEFAULT 0,nextAttempt INTEGER NOT NULL,expires INTEGER NOT NULL,leaseUntil INTEGER NOT NULL DEFAULT 0);
+    CREATE INDEX IF NOT EXISTS email_outbox_due ON email_outbox(status,nextAttempt);
     CREATE TABLE IF NOT EXISTS replays (userId TEXT NOT NULL,key TEXT NOT NULL,fingerprint TEXT NOT NULL,response TEXT NOT NULL,PRIMARY KEY(userId,key));`);
   return {
     db,
