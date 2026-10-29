@@ -32,6 +32,16 @@ Existing preferences without a density setting use Comfortable spacing. Density 
 
 ### Added
 
+#### Prepare a private workspace with real accounts and quotes
+
+Private deployment now supports owner-only registration, verification and password recovery, with queued email retries. The server can load Twelve Data quotes for the supported catalog; missing, stale or failed quotes remain unavailable. Real accounts no longer receive synthetic quotes, themes, overview charts or risk illustrations.
+
+Render deployment settings and a private-launch guide describe persistent storage, server-only credentials and backups. This integration is prepared for personal use; live deployment, email delivery and provider entitlements still need to be configured and verified. Historical prices, FX, news and continuous alert monitoring are not connected.
+
+![Real-account workspace showing unavailable provider quotes without sample fallback](docs/changelog/assets/unreleased/private-live-workspace.png)
+
+Actual local real-account view with no provider key: missing quotes stay unavailable instead of showing demo prices.
+
 #### Adjust your workspace as your interests change
 
 Settings now lets you edit optional interests after setup and choose Comfortable or Compact spacing for desktop tables and watchlist rows. Saved choices return when you reopen the workspace. Mobile spacing remains comfortable for touch controls.
@@ -117,15 +127,15 @@ The Changelog page is available from desktop navigation and the mobile More menu
 
 ### Security
 
-Workspaces are isolated by account. Server checks enforce ownership, revisions, duplicate-save protection, and session/CSRF controls. Transactions retain correction and void audit history. Real registration remains disabled until the email and identity configuration is supplied.
+Workspaces are isolated by account. Server checks enforce ownership, revisions, duplicate-save protection, and session/CSRF controls. Transactions retain correction and void audit history. Production registration requires an approved email allowlist and a configured email provider; demo access is disabled in production.
 
 ### Known limitations
 
-- Quotes, themes, and the two dated closing snapshots are synthetic demonstrations. Real accounts do not receive sample historical prices. Licensed price history, FX, news, fundamentals, and total-return benchmarks are not connected.
+- Demo quotes, themes and closing snapshots remain synthetic. Real accounts use configured provider quotes or unavailable values. Licensed historical prices, FX, news, fundamentals and benchmarks are not connected.
 - Alerts can evaluate supplied sample observations, but continuous monitoring needs a server ingestion scheduler. Email and push delivery are unavailable.
 - Daily returns use an end-of-day flow estimate. Large net flows show a timing warning; detailed intraday flow treatment remains unfinished. Matched same-currency transfers are excluded from aggregate external flows.
 - Production identity, account management, retention, backups, and deployment security/accessibility reviews remain launch requirements. This development app is not a production-ready financial service.
 
 ### Verification
 
-The current application passed 42 calculation/API tests, 20 browser journeys, and the production build. The history increment also passed GitHub checks. Independent review findings were fixed and re-reviewed. Screenshots above were captured from the running app with sample data. Automated accessibility checks do not replace manual screen-reader and device reviews.
+The current application passed 51 calculation/API tests, 21 browser journeys, and the production build. The history increment also passed GitHub checks. Independent review findings were fixed and re-reviewed. Screenshots above were captured from the running app with sample data. Automated accessibility checks do not replace manual screen-reader and device reviews.

@@ -10,6 +10,9 @@ import {
 } from "node:crypto";
 import { resolve } from "node:path";
 import { createStore } from "./store";
+import { accountAllowed, demoEnabled } from "./config";
+import { createEmailDelivery } from "./email";
+import { createMarket } from "./market";
 import { assets, themes, newWorkspace, AS_OF } from "./sample";
 import { completeOnboarding, normalizeOpeningDraft } from "./onboarding";
 import { ledgerHistory } from "../src/app/domain/history";
@@ -46,10 +49,16 @@ const name = (n: unknown) => {
   return n.trim();
 };
 const secret = () => randomBytes(32).toString("hex");
-export function createApp(store = createStore()) {
+export function createApp(store = createStore(), market = createMarket()) {
   const app = express();
   const production = process.env["NODE_ENV"] === "production";
+  const delivery = createEmailDelivery(store);
+  app.set("trust proxy", Number(process.env["TRUST_PROXY_HOPS"] || 0));
   app.disable("x-powered-by");
+  app.get("/healthz", (_req, res) => {
+    store.db.prepare("SELECT 1").get();
+    res.json({ status: "ok" });
+  });
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -82,10 +91,7 @@ export function createApp(store = createStore()) {
       data,
       meta: {
         requestId: res.locals["requestId"],
-        asOf: AS_OF,
-        source: "Avenor synthetic fixture",
-        dataStatus: "sample",
-        delaySeconds: null,
+        ...market.metadata(!!res.locals["user"]?.demo),
       },
     });
   const auth = (req: Request, res: Response, next: NextFunction) => {
@@ -109,6 +115,21 @@ export function createApp(store = createStore()) {
       );
     res.locals["session"] = session;
     res.locals["user"] = store.getUser(session.userId);
+    const currentUser = res.locals["user"];
+    if (
+      !currentUser ||
+      (currentUser.demo ? !demoEnabled() : !accountAllowed(currentUser.email))
+    ) {
+      store.db.prepare("DELETE FROM sessions WHERE id=?").run(session.id);
+      res.clearCookie("avenor_session", { path: "/" });
+      return next(
+        new DomainError(
+          "This account is not enabled for this private workspace.",
+          "UNAUTHENTICATED",
+          401,
+        ),
+      );
+    }
     if (req.method !== "GET" && req.headers["x-csrf-token"] !== session.csrf)
       return next(
         new DomainError("Reload the page and try again.", "FORBIDDEN", 403),
@@ -130,7 +151,7 @@ export function createApp(store = createStore()) {
     });
     return csrf;
   };
-  const valuations = (w: Workspace) => {
+  const valuations = (w: Workspace, demo: boolean) => {
     const result = Object.fromEntries(
       w.portfolios
         .filter((p) => !p.archived)
@@ -138,7 +159,7 @@ export function createApp(store = createStore()) {
           p.id,
           valueLedger(
             w.transactions.filter((t) => t.portfolioId === p.id),
-            assets,
+            market.assets(demo),
             p.revision,
             w.preferences.currency,
           ),
@@ -148,13 +169,15 @@ export function createApp(store = createStore()) {
   };
   const bootstrap = (res: Response, id: string, csrf: string) => {
     const workspace = store.workspace(id);
+    res.locals["user"] = store.getUser(id);
     return send(res, {
       user: store.getUser(id),
       csrf,
       workspace,
-      valuations: valuations(workspace),
-      assets,
-      themes,
+      valuations: valuations(workspace, !!store.getUser(id)?.demo),
+      assets: market.assets(!!store.getUser(id)?.demo),
+      market: market.metadata(!!store.getUser(id)?.demo),
+      themes: store.getUser(id)?.demo ? themes : [],
       currencies: ["USD", "EUR", "GBP"],
     });
   };
@@ -163,6 +186,8 @@ export function createApp(store = createStore()) {
     rateLimit({
       windowMs: 15 * 60_000,
       limit: 30,
+      // Public login settings must not consume the credential-attempt budget.
+      skip: (req) => req.method === "GET" && req.path === "/config",
       standardHeaders: "draft-8",
       legacyHeaders: false,
     }),
@@ -180,7 +205,20 @@ export function createApp(store = createStore()) {
       );
     next();
   });
+  app.get("/v1/auth/config", (_req, res) =>
+    send(res, {
+      demo: demoEnabled(),
+      registration: process.env["ENABLE_LOCAL_ACCOUNTS"] === "true",
+      private: !!process.env["PRIVATE_ACCOUNT_EMAILS"] || production,
+    }),
+  );
   app.post("/v1/auth/demo", (req, res) => {
+    if (!demoEnabled())
+      throw new DomainError(
+        "Sample workspaces are disabled on this private installation.",
+        "FORBIDDEN",
+        403,
+      );
     const id = randomUUID();
     store.db
       .prepare("INSERT INTO users VALUES (?,?,?,?,?,?,?)")
@@ -216,7 +254,10 @@ export function createApp(store = createStore()) {
       throw new DomainError(
         "Accept the terms and use a password of 12–128 characters.",
       );
-    if (!store.db.prepare("SELECT id FROM users WHERE email=?").get(email)) {
+    if (
+      accountAllowed(email) &&
+      !store.db.prepare("SELECT id FROM users WHERE email=?").get(email)
+    ) {
       const id = randomUUID();
       store.db
         .prepare("INSERT INTO users VALUES (?,?,?,?,?,?,?)")
@@ -236,28 +277,9 @@ export function createApp(store = createStore()) {
         "If this address can be registered, a verification email will arrive shortly.",
     });
   });
-  function queueEmail(userId: string, kind: string, email: string) {
-    const token = secret();
-    store.db
-      .prepare("DELETE FROM tokens WHERE userId=? AND kind=?")
-      .run(userId, kind);
-    store.db
-      .prepare("INSERT INTO tokens VALUES (?,?,?,?)")
-      .run(hash(token), userId, kind, Date.now() + 30 * 60_000);
-    // Delivery is an explicit server adapter. Never return reset tokens through the public API.
-    if (process.env["EMAIL_WEBHOOK_URL"])
-      void fetch(process.env["EMAIL_WEBHOOK_URL"], {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env["EMAIL_WEBHOOK_SECRET"] || ""}`,
-        },
-        body: JSON.stringify({
-          email,
-          kind,
-          url: `${process.env["APP_ORIGIN"]}/auth/${kind === "verify" ? "verify" : "reset"}?token=${token}`,
-        }),
-      }).catch(() => console.error("Email adapter delivery failed"));
+  function queueEmail(userId: string, kind: "verify" | "reset", email: string) {
+    if (accountAllowed(email) && process.env["APP_ORIGIN"])
+      delivery.enqueue(userId, kind, email);
   }
   app.post("/v1/auth/login", (req, res) => {
     const row = store.db
@@ -271,7 +293,7 @@ export function createApp(store = createStore()) {
       String(req.body.password || "").slice(0, 128),
       row?.password || dummyPassword,
     );
-    if (!row || !valid)
+    if (!row || !valid || !accountAllowed(row.email))
       throw new DomainError(
         "Email or password is incorrect.",
         "UNAUTHENTICATED",
@@ -400,14 +422,22 @@ export function createApp(store = createStore()) {
         return {
           ...original,
           workspace: current,
-          valuations: valuations(current),
+          valuations: valuations(current, !!user.demo),
+          assets: market.assets(!!user.demo),
+          market: market.metadata(!!user.demo),
         };
       }
       const w = store.workspace(user.id),
         result = fn(w);
       w.revision = (w.revision || 0) + 1;
       store.save(user.id, w);
-      const response = { result, workspace: w, valuations: valuations(w) };
+      const response = {
+        result,
+        workspace: w,
+        valuations: valuations(w, !!user.demo),
+        assets: market.assets(!!user.demo),
+        market: market.metadata(!!user.demo),
+      };
       store.db
         .prepare("INSERT INTO replays VALUES (?,?,?,?)")
         .run(user.id, key, fingerprint, JSON.stringify(response));
@@ -523,7 +553,7 @@ export function createApp(store = createStore()) {
       res,
       valueLedger(
         w.transactions.filter((t) => t.portfolioId === p.id),
-        assets,
+        market.assets(!!res.locals["user"].demo),
         p.revision,
         String(req.query["currency"] || w.preferences.currency),
       ),
@@ -540,7 +570,7 @@ export function createApp(store = createStore()) {
       res,
       ledgerHistory(
         w.transactions.filter((t) => id === "all" || t.portfolioId === id),
-        assets,
+        market.assets(!!res.locals["user"].demo),
         res.locals["user"].demo ? sampleCloses : [],
         String(req.query["from"] || ""),
         String(req.query["to"] || ""),
@@ -740,23 +770,29 @@ export function createApp(store = createStore()) {
   app.get("/v1/assets", (req, res) =>
     send(
       res,
-      assets.filter((a) =>
-        (a.name + a.symbol + a.exchange)
-          .toLowerCase()
-          .includes(String(req.query["query"] || "").toLowerCase()),
-      ),
+      market
+        .assets(!!res.locals["user"].demo)
+        .filter((a) =>
+          (a.name + a.symbol + a.exchange)
+            .toLowerCase()
+            .includes(String(req.query["query"] || "").toLowerCase()),
+        ),
     ),
   );
   app.get("/v1/assets/:id", (req, res) => {
-    const a = assets.find((a) => a.id === req.params["id"]);
+    const a = market
+      .assets(!!res.locals["user"].demo)
+      .find((a) => a.id === req.params["id"]);
     if (!a) throw new DomainError("Asset not found.", "NOT_FOUND", 404);
     send(res, a);
   });
-  app.get("/v1/themes", (_req, res) => send(res, themes));
+  app.get("/v1/themes", (_req, res) =>
+    send(res, res.locals["user"].demo ? themes : []),
+  );
   app.post("/v1/themes/:id/follow", (req, res) =>
     mutate(req, res, (w) => {
       const id = String(req.params["id"]);
-      if (!themes.some((t) => t.id === id))
+      if (!res.locals["user"].demo || !themes.some((t) => t.id === id))
         throw new DomainError("Theme not found.", "NOT_FOUND", 404);
       w.followedThemes = w.followedThemes.includes(id)
         ? w.followedThemes.filter((x) => x !== id)
@@ -806,7 +842,7 @@ export function createApp(store = createStore()) {
           req.body.items.some(
             (id: string) =>
               !assets.some((a) => a.id === id) &&
-              !themes.some((t) => t.id === id),
+              (!res.locals["user"].demo || !themes.some((t) => t.id === id)),
           )
         )
           throw new DomainError("Choose valid assets or themes.");
@@ -839,7 +875,11 @@ export function createApp(store = createStore()) {
       if (!["price", "portfolio-value", "portfolio-drawdown"].includes(kind))
         throw new DomainError("Choose a supported alert type.");
       const a =
-        kind === "price" ? assets.find((a) => a.id === req.body.assetId) : null;
+        kind === "price"
+          ? market
+              .assets(!!res.locals["user"].demo)
+              .find((a) => a.id === req.body.assetId)
+          : null;
       const p =
         kind === "price" ? null : portfolio(w, String(req.body.portfolioId));
       if (kind === "price" && !a)
@@ -861,7 +901,7 @@ export function createApp(store = createStore()) {
         (p
           ? valueLedger(
               w.transactions.filter((t) => t.portfolioId === p.id),
-              assets,
+              market.assets(!!res.locals["user"].demo),
               p.revision,
               currency,
             ).value
@@ -888,7 +928,9 @@ export function createApp(store = createStore()) {
         state:
           kind === "portfolio-drawdown"
             ? "Collecting comparable closes"
-            : "Sample feed · waiting for a new observation",
+            : res.locals["user"].demo
+              ? "Sample feed · waiting for a new observation"
+              : "Provider snapshot only · continuous monitoring unavailable",
       };
       w.alerts.push(alert);
       if (
@@ -1017,5 +1059,5 @@ export function createApp(store = createStore()) {
       requestId: res.locals["requestId"],
     });
   });
-  return { app, store };
+  return { app, store, market, delivery };
 }

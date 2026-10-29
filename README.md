@@ -38,13 +38,11 @@ The Express server serves the built application at **http://127.0.0.1:3001**. Ru
 
 ## Data and release boundaries
 
-**This is a functional development implementation, not a production-ready financial service.** All displayed quotes are the specification's synthetic snapshot dated 28 October 2026. The overview chart remains a separate disclosed fixture. Analysis now reconstructs ledger history using only two explicit synthetic closing snapshots (27–28 October 2026), with gaps for unavailable prices and FX. Real accounts receive no synthetic closing prices.
+The app supports a private personal deployment with real accounts and a server-side Twelve Data quote adapter. Follow [private launch setup](docs/PRIVATE_LAUNCH.md) and render.yaml. Production requires private account, email, market-data, and persistent-storage configuration and disables the demo. Actual deployment, provider entitlement and email delivery must be verified separately.
 
-Live/delayed quotes, historical FX, total-return benchmarks, OHLC, licensed news/events, fundamentals, and point-in-time theme evidence require external provider selection, rights, credentials, and ingestion work. Unsupported panels explain the missing data instead of fabricating it. EUR/GBP cash transactions are supported, but converted valuations are unavailable without FX coverage.
+Development demos retain the synthetic snapshot. Real accounts never use synthetic quotes or themes; unavailable prices remain unavailable. Historical market data, FX, benchmarks, news, personalized feed and continuous alert evaluation are not connected. This is a limited personal tracker, not a public production financial service.
 
-Real registration is **disabled by default**. Optional local account flows require `ENABLE_LOCAL_ACCOUNTS=true`, `APP_ORIGIN`, and a server-only `EMAIL_WEBHOOK_URL`. The adapter receives `{ email, kind, url }` with an optional Bearer secret. Production use additionally requires reliable email delivery/retries, identity-provider compromised-password screening, account/session management, a retention/deletion policy, backups, telemetry, and deployment security review.
-
-The sample observation endpoint evaluates alerts on the server. Continuous evaluation while the browser is closed requires a provider-ingestion scheduler. Portfolio-value and daily-loss alerts use a fixed observation currency. Daily loss compares consecutive UTC sample closing dates after removing net external flow; it is not peak-relative drawdown. Missing/stale/gapped closes reset the comparison. Licensed historical coverage, total-return benchmarks, historical FX basis, account email/password/session management remain follow-on work. See [implementation status](docs/IMPLEMENTATION.md) for the specification coverage and release gates.
+Registration is disabled locally by default. Real registration uses ENABLE_LOCAL_ACCOUNTS=true, APP_ORIGIN, an owner allowlist and Resend (or the legacy email webhook). Verification and reset emails are queued in SQLite and retried with expiry and duplicate-delivery protection. Secrets must stay in the server environment. See .env.example and [implementation status](docs/IMPLEMENTATION.md).
 
 ## Verification
 

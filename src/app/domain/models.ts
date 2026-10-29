@@ -35,6 +35,8 @@ export interface Portfolio {
   archived: boolean;
 }
 export interface Asset {
+  source?: string;
+  dataStatus?: "provider" | "unavailable";
   id: string;
   symbol: string;
   name: string;
@@ -179,6 +181,12 @@ export interface OpeningDraft {
   }[];
 }
 export interface Bootstrap {
+  market?: {
+    source: string;
+    asOf: string | null;
+    dataStatus: string;
+    delaySeconds: number | null;
+  };
   user: User;
   csrf: string;
   workspace: Workspace;

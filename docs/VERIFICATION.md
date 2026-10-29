@@ -65,3 +65,12 @@ Not performed: manual screen-reader testing, complete keyboard/zoom/device matri
 - Independent review found stale onboarding revisions after portfolio creation and invisible selected-interest styling. Both were fixed and re-reviewed with no remaining blockers.
 - Captured and inspected the actual Settings screenshot at docs/changelog/assets/unreleased/workspace-preferences.png. The in-app changelog loads all seven screenshots and displays current 1.0.0 and planned 1.1.0 Unreleased labels on desktop and mobile.
 - Personalized news and configurable market coverage remain unfinished. No production release or manual screen-reader review was performed.
+
+## Private live-launch preparation — 29 October 2026
+
+- Typecheck, 51 calculation/API tests, production build and dependency audit passed (zero reported vulnerabilities). All 21 browser journeys passed after fixing public auth configuration requests consuming the credential-attempt rate limit. Regression coverage exercises 35 configuration reads before registration; the global API rate limit remains in force.
+- Provider validation and unavailable-data behavior, private registration, session revocation, durable mail retries, expiry and idempotency are covered with local test services. No production email delivery or live provider quotes were verified.
+- Independent review identified revoked sessions returning 403 without clearing client state. Fixed to invalidate the session and return 401; re-review found no remaining actionable findings. The rate-limit follow-up also received independent review.
+- Executed the online SQLite backup command against a temporary database, checked integrity and read the expected record back from the backup.
+- Captured the actual private-workspace unavailable-data screen and refreshed desktop/mobile changelog screenshots. Current version remains 1.0.0; planned 1.1.0 is Unreleased, with eight screenshot entries.
+- Hosting is prepared but not deployed. Provider accounts and billing are operator setup steps; no credentials belong in the repository. A free market-data alternative is being evaluated before purchasing Twelve Data. Historical market data, FX, news, continuous alerts, production restart persistence and external backup recovery remain unverified or unimplemented as documented in PRIVATE_LAUNCH.md.

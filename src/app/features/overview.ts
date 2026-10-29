@@ -39,7 +39,19 @@ import { Chart } from "../shared/chart";
           <span class="desktop-only">· Display currency</span></span
         >
       </div>
-      <span class="data-pill"><i></i> Sample · 28 Oct 2026</span>
+      <span class="data-pill"
+        ><i></i
+        >{{
+          s.user()?.demo
+            ? "Sample · 28 Oct 2026"
+            : "Personal ledger · provider quotes"
+        }}</span
+      >
+      @if (!s.user()?.demo) {
+        <button class="button secondary" (click)="s.refresh()">
+          Refresh quotes
+        </button>
+      }
     </div>
     @if (s.valuation(); as v) {
       <div class="metric-grid">
@@ -110,27 +122,35 @@ import { Chart } from "../shared/chart";
                 >View analysis <av-icon name="arrow"
               /></a>
             </div>
-            <div class="chart-toolbar">
-              <div class="segmented">
-                <button
-                  (click)="returnChart.set(false)"
-                  [class.selected]="!returnChart()"
-                  [attr.aria-pressed]="!returnChart()"
-                >
-                  Value</button
-                ><button
-                  (click)="returnChart.set(true)"
-                  [class.selected]="returnChart()"
-                  [attr.aria-pressed]="returnChart()"
-                >
-                  Return
-                </button>
+            @if (s.user()?.demo) {
+              <div class="chart-toolbar">
+                <div class="segmented">
+                  <button
+                    (click)="returnChart.set(false)"
+                    [class.selected]="!returnChart()"
+                    [attr.aria-pressed]="!returnChart()"
+                  >
+                    Value</button
+                  ><button
+                    (click)="returnChart.set(true)"
+                    [class.selected]="returnChart()"
+                    [attr.aria-pressed]="returnChart()"
+                  >
+                    Return
+                  </button>
+                </div>
+                <span class="muted small">Opening sample · Jan–Oct 2026</span>
               </div>
-              <span class="muted small">Opening sample · Jan–Oct 2026</span>
-            </div>
-            <av-chart [returns]="returnChart()" /><av-source
-              text="Synthetic opening-portfolio fixture · USD · no live market history"
-            />
+              <av-chart [returns]="returnChart()" /><av-source
+                text="Synthetic opening-portfolio fixture · USD · no live market history"
+              />
+            } @else {
+              <av-empty
+                icon="chart"
+                title="Historical market data unavailable"
+                description="Your holdings use available provider quotes. Historical prices and exchange rates are not connected yet."
+              />
+            }
           </section>
           <section class="panel allocation-panel">
             <div class="panel-heading">
@@ -217,21 +237,34 @@ import { Chart } from "../shared/chart";
             </div>
             <av-source />
           </section>
-          <section class="panel perspective-panel">
-            <span class="eyebrow">WORTH A CLOSER LOOK</span>
-            <div class="perspective-symbol"><av-icon name="compass" /></div>
-            <h2>Big ideas.<br />A wider perspective.</h2>
-            <p>
-              Explore the themes shaping industries, with context that goes
-              beyond a headline.
-            </p>
-            <a routerLink="/discover" class="button secondary"
-              >Find your next perspective <av-icon name="arrow"
-            /></a>
-            <div class="perspective-bottom">
-              <span>Curated themes</span><span>Transparent methodology</span>
-            </div>
-          </section>
+          @if (s.user()?.demo) {
+            <section class="panel perspective-panel">
+              <span class="eyebrow">WORTH A CLOSER LOOK</span>
+              <div class="perspective-symbol"><av-icon name="compass" /></div>
+              <h2>Big ideas.<br />A wider perspective.</h2>
+              <p>
+                Explore the themes shaping industries, with context that goes
+                beyond a headline.
+              </p>
+              <a routerLink="/discover" class="button secondary"
+                >Find your next perspective <av-icon name="arrow"
+              /></a>
+              <div class="perspective-bottom">
+                <span>Curated themes</span><span>Transparent methodology</span>
+              </div>
+            </section>
+          } @else {
+            <section class="panel padded">
+              <h2>Your research list</h2>
+              <p>
+                Follow supported instruments in your watchlists. Theme research
+                and news are not connected.
+              </p>
+              <a routerLink="/watchlists" class="button secondary"
+                >Open watchlists</a
+              >
+            </section>
+          }
         </div>
       } @else {
         <section class="panel">
@@ -244,38 +277,40 @@ import { Chart } from "../shared/chart";
           >
         </section>
       }
-      <section class="themes-section">
-        <div class="panel-heading">
-          <div>
-            <span class="eyebrow">LOOK A LITTLE FURTHER</span>
-            <h2>Themes to explore</h2>
-          </div>
-          <a routerLink="/discover" class="text-link"
-            >All themes <av-icon name="arrow"
-          /></a>
-        </div>
-        <div class="theme-grid">
-          @for (t of s.state()?.themes; track t.id) {
-            <a class="theme-preview" [routerLink]="['/themes', t.id]"
-              ><span class="theme-mini-art" [style.--theme-color]="t.color"
-                ><i></i><i></i><i></i
-                ><av-icon
-                  [name]="
-                    t.sector === 'Technology'
-                      ? 'chart'
-                      : t.sector === 'Fixed income'
-                        ? 'shield'
-                        : 'compass'
-                  " /></span
-              ><span
-                ><small>{{ t.sector }}</small>
-                <h3>{{ t.name }}</h3>
-                <p>{{ t.description }}</p></span
-              ><av-icon name="arrow"
+      @if (s.user()?.demo) {
+        <section class="themes-section">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">LOOK A LITTLE FURTHER</span>
+              <h2>Themes to explore</h2>
+            </div>
+            <a routerLink="/discover" class="text-link"
+              >All themes <av-icon name="arrow"
             /></a>
-          }
-        </div>
-      </section>
+          </div>
+          <div class="theme-grid">
+            @for (t of s.state()?.themes; track t.id) {
+              <a class="theme-preview" [routerLink]="['/themes', t.id]"
+                ><span class="theme-mini-art" [style.--theme-color]="t.color"
+                  ><i></i><i></i><i></i
+                  ><av-icon
+                    [name]="
+                      t.sector === 'Technology'
+                        ? 'chart'
+                        : t.sector === 'Fixed income'
+                          ? 'shield'
+                          : 'compass'
+                    " /></span
+                ><span
+                  ><small>{{ t.sector }}</small>
+                  <h3>{{ t.name }}</h3>
+                  <p>{{ t.description }}</p></span
+                ><av-icon name="arrow"
+              /></a>
+            }
+          </div>
+        </section>
+      }
     }
   `,
 })

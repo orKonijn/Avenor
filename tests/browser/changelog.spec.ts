@@ -16,7 +16,7 @@ test("changelog uses repository notes, loads screenshots and works on mobile", a
   await expect(page.getByRole("article")).toContainText("1.0.0");
   await expect(page.locator(".release-version")).toContainText("Current app version: 1.0.0");
   const images = page.getByRole("article").locator("img");
-  await expect(images).toHaveCount(7);
+  await expect(images).toHaveCount(8);
   for (const img of await images.all()) {
     await img.scrollIntoViewIfNeeded();
     await expect

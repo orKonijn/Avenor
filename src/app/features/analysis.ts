@@ -80,7 +80,11 @@ import { maxDrawdown } from "../domain/ledger";
           }
         </div>
         <av-source
-          text="Current sample quote snapshot · ETF fund-level classification · no constituent look-through"
+          [text]="
+            s.user()?.demo
+              ? 'Current sample quote snapshot · ETF fund-level classification · no constituent look-through'
+              : 'Available provider quotes · ETF fund-level classification · no constituent look-through'
+          "
         />
       </section>
     }
@@ -89,8 +93,8 @@ import { maxDrawdown } from "../domain/ledger";
         <h2>What drove a day</h2>
         <p>
           Additive daily attribution requires aligned daily valuations, FX,
-          fees, and cash flows. The opening sample snapshot alone is
-          insufficient for this calculation.
+          fees, and cash flows. Current snapshots alone are insufficient for
+          this calculation.
         </p>
         <av-empty
           icon="chart"
@@ -115,9 +119,17 @@ import { maxDrawdown } from "../domain/ledger";
           ><small>Of current value, including cash</small>
         </section>
         <section class="metric-card">
-          <span>Fixture drawdown</span
-          ><strong class="negative">{{ s.percent(drawdown()) }}</strong
-          ><small>Synthetic return index · Jan–Oct 2026</small>
+          <span>{{
+            s.user()?.demo ? "Fixture drawdown" : "Historical drawdown"
+          }}</span
+          ><strong class="negative">{{
+            s.user()?.demo ? s.percent(drawdown()) : "Unavailable"
+          }}</strong
+          ><small>{{
+            s.user()?.demo
+              ? "Synthetic return index · Jan–Oct 2026"
+              : "Historical return series not connected"
+          }}</small>
         </section>
         <section class="metric-card">
           <span>Historical volatility</span
@@ -134,8 +146,13 @@ import { maxDrawdown } from "../domain/ledger";
           and does not predict future losses.
         </p>
         <p>
-          The synthetic fixture has 11 sparse observations. It cannot support
-          annualized daily volatility. No single risk score is assigned.
+          {{
+            s.user()?.demo
+              ? "The synthetic fixture has 11 sparse observations."
+              : "Historical market observations are not connected."
+          }}
+          This cannot support annualized daily volatility. No single risk score
+          is assigned.
         </p>
       </section>
     } `,

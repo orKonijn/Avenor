@@ -243,8 +243,8 @@ import { OpeningDraft } from "../domain/models";
             <av-icon name="info" />
             <p>
               Save a draft to resume after refresh. Finishing saves opening
-              cash, holdings, and audit history together. Sample market prices
-              are labeled throughout.
+              cash, holdings, and audit history together. Available market
+              prices are labeled throughout.
             </p>
           </div>
           <div class="form-actions">

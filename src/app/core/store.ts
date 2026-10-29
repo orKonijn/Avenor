@@ -130,12 +130,20 @@ export class Store {
       const data = await this.request<{
         workspace: Workspace;
         valuations: Bootstrap["valuations"];
+        assets?: Asset[];
+        market?: Bootstrap["market"];
         result: any;
       }>(path, method, body, key);
       if (this.user()?.id !== ownerId) return null;
       this.state.update((s) =>
         s && (data.workspace.revision || 0) >= (s.workspace.revision || 0)
-          ? { ...s, workspace: data.workspace, valuations: data.valuations }
+          ? {
+              ...s,
+              workspace: data.workspace,
+              valuations: data.valuations,
+              assets: data.assets ?? s.assets,
+              market: data.market ?? s.market,
+            }
           : s,
       );
       this.notice.set(message);

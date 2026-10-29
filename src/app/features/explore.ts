@@ -176,17 +176,24 @@ import { Icon, Empty, Source } from "../shared/ui";
           </article>
         } @empty {
           <av-empty
-            title="No themes match"
-            description="Try a different search or reset your filters."
+            [title]="
+              s.user()?.demo
+                ? 'No themes match'
+                : 'Theme research is not connected'
+            "
+            [description]="
+              s.user()?.demo
+                ? 'Try a different search or reset your filters.'
+                : 'No synthetic theme recommendations are supplied to personal accounts.'
+            "
           />
         }
       </div>
       <div class="methodology-strip">
         <av-icon name="info" />
         <p>
-          No hidden personalized ranking. Sample themes are sorted
-          alphabetically. Evidence scores stay unavailable until the required
-          data exists.
+          No hidden personalized ranking. Evidence scores stay unavailable until
+          the required data exists.
         </p>
       </div>
     }
@@ -280,7 +287,9 @@ export class DiscoverPage {
       }
       <div class="asset-detail-grid">
         <section class="panel padded">
-          <span class="eyebrow">SAMPLE QUOTE</span>
+          <span class="eyebrow">{{
+            s.user()?.demo ? "SAMPLE QUOTE" : "PROVIDER SNAPSHOT"
+          }}</span>
           <div class="asset-price">
             {{ s.money(a.price, a.currency)
             }}<span class="positive">{{
@@ -289,15 +298,26 @@ export class DiscoverPage {
                 : "—"
             }}</span>
           </div>
-          <av-source />
+          <av-source
+            [text]="
+              s.user()?.demo
+                ? ''
+                : a.price
+                  ? a.source +
+                    ' · ' +
+                    a.asOf +
+                    ' · delay varies by exchange and plan'
+                  : 'Provider quote unavailable · no sample fallback'
+            "
+          />
           <div class="quote-visual">
             <span class="quote-line"></span>
             <div>
               <av-icon name="chart" />
               <h3>Historical price feed not connected</h3>
               <p>
-                The sample snapshot is available. A line or candlestick chart
-                needs actual dated prices and OHLC coverage.
+                A line or candlestick chart needs dated historical prices and
+                OHLC coverage.
               </p>
             </div>
           </div>
@@ -320,8 +340,8 @@ export class DiscoverPage {
             <dd title="Volume feed not connected">—</dd>
           </dl>
           <small class="muted"
-            >Unavailable metrics require a fundamentals provider. Sample prices
-            are not current market quotes.</small
+            >Unavailable metrics require a fundamentals provider. Quote times
+            are shown with each provider snapshot.</small
           >
         </section>
       </div>
