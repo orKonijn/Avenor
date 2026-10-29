@@ -28,7 +28,19 @@ The new authenticated /v1/history endpoint accepts a portfolio, currency, and da
 
 Watchlist update and delete requests now require the list's revision. Older saved lists start at revision 0. Development API clients must send the revision returned with each list (0 when absent on a legacy list) and reload after a conflict; requests without a matching revision are rejected.
 
+Existing preferences without a density setting use Comfortable spacing. Density and interests can be omitted from development API requests without clearing their saved values. When provided, density must be Comfortable or Compact and interests must use the available Technology, Diversification, or Fixed income options.
+
 ### Added
+
+#### Adjust your workspace as your interests change
+
+Settings now lets you edit optional interests after setup and choose Comfortable or Compact spacing for desktop tables and watchlist rows. Saved choices return when you reopen the workspace. Mobile spacing remains comfortable for touch controls.
+
+Preferences saved in another tab cannot be overwritten by an older form. If a conflict occurs, review your unsaved choices and explicitly reload the latest preferences before editing again. Interests are saved for future personalization; a live personalized news feed is not connected.
+
+![Settings showing saved compact spacing and editable interests](docs/changelog/assets/unreleased/workspace-preferences.png)
+
+Choose your display spacing and interests together in Preferences.
 
 #### Keep watchlist changes safe across tabs
 
@@ -116,4 +128,4 @@ Workspaces are isolated by account. Server checks enforce ownership, revisions, 
 
 ### Verification
 
-The current application passed 41 calculation/API tests, 18 browser journeys, and the production build. The history increment also passed GitHub checks. Independent review findings were fixed and re-reviewed. Screenshots above were captured from the running app with sample data. Automated accessibility checks do not replace manual screen-reader and device reviews.
+The current application passed 42 calculation/API tests, 20 browser journeys, and the production build. The history increment also passed GitHub checks. Independent review findings were fixed and re-reviewed. Screenshots above were captured from the running app with sample data. Automated accessibility checks do not replace manual screen-reader and device reviews.

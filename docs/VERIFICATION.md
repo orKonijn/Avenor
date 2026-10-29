@@ -56,3 +56,12 @@ Not performed: manual screen-reader testing, complete keyboard/zoom/device matri
 - New coverage checks stale edits/deletes, legacy lists without revisions, owner isolation, idempotent retries, and alerts surviving list deletion. A two-tab browser journey verifies conflict recovery, deliberate retry, persistence, no axe violations, and no horizontal overflow at 390 px.
 - Independent review of the full change found no actionable findings. Actual conflict screenshot added at docs/changelog/assets/unreleased/watchlist-conflict.png; changelog screenshots load on desktop and mobile with current 1.0.0 and planned 1.1.0 Unreleased labels.
 - Manual screen-reader/device coverage and production deployment remain outside this verification.
+
+## Workspace preferences — 29 October 2026
+
+- Typecheck, 42 calculation/API tests, production build, all 20 browser journeys, and dependency audit passed (zero reported vulnerabilities).
+- New API coverage verifies legacy density defaults, omitted-field preservation, valid interest choices, duplicate removal, invalid/stale update rejection, explicit clearing, and idempotency.
+- Browser coverage checks saved choices after refresh, visible selected interests, measured compact row height, unchanged mobile row height, mobile overflow, axe accessibility, stale forms after workspace refresh, explicit conflict recovery, and returning to onboarding preferences after creating a portfolio.
+- Independent review found stale onboarding revisions after portfolio creation and invisible selected-interest styling. Both were fixed and re-reviewed with no remaining blockers.
+- Captured and inspected the actual Settings screenshot at docs/changelog/assets/unreleased/workspace-preferences.png. The in-app changelog loads all seven screenshots and displays current 1.0.0 and planned 1.1.0 Unreleased labels on desktop and mobile.
+- Personalized news and configurable market coverage remain unfinished. No production release or manual screen-reader review was performed.

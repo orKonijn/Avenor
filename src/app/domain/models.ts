@@ -132,6 +132,7 @@ export interface Theme {
   counterpoint: string;
 }
 export interface Preferences {
+  density?: "comfortable" | "compact";
   appearance: "light" | "dark" | "system";
   currency: string;
   locale: string;
