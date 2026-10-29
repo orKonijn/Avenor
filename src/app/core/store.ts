@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject } from "@angular/core";
+import { Injectable, signal, computed, inject, effect } from "@angular/core";
 import { Router } from "@angular/router";
 import { Bootstrap, Workspace, Asset, Watchlist } from "../domain/models";
 @Injectable({ providedIn: "root" })
@@ -32,6 +32,10 @@ export class Store {
   );
   private appearance = "system";
   constructor() {
+    effect(() => {
+      document.documentElement.dataset["density"] =
+        this.workspace()?.preferences.density ?? "comfortable";
+    });
     const media = matchMedia("(prefers-color-scheme: dark)");
     media.addEventListener("change", () => {
       if (this.appearance === "system") this.applyTheme("system");

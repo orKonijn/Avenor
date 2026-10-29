@@ -3250,3 +3250,10 @@ dd {
 .release-notes figcaption a { text-decoration: underline; text-underline-offset: 3px; }
 .transfer-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
 .release-version { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 16px; color: var(--accent); font-size: 18px; }
+
+/* Compact spacing never reduces mobile touch targets or font sizes. */
+@media (min-width: 1024px) {
+  html[data-density="compact"] td { padding-top: 8px; padding-bottom: 8px; }
+  html[data-density="compact"] th { padding-top: 8px; padding-bottom: 8px; }
+  html[data-density="compact"] .asset-list-row { padding-top: 10px; padding-bottom: 10px; }
+}

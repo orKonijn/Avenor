@@ -14,6 +14,7 @@ import { assets, themes, newWorkspace, AS_OF } from "./sample";
 import { completeOnboarding, normalizeOpeningDraft } from "./onboarding";
 import { ledgerHistory } from "../src/app/domain/history";
 import { sampleCloses } from "./history";
+import { INTERESTS } from "../src/app/domain/preferences";
 import { recordTransfer, voidTransfer } from "./transfers";
 import {
   D,
@@ -672,17 +673,32 @@ export function createApp(store = createStore()) {
       } catch {
         throw new DomainError("Choose a valid locale and time zone.");
       }
+      if (
+        p.density !== undefined &&
+        !["comfortable", "compact"].includes(p.density)
+      )
+        throw new DomainError("Choose comfortable or compact spacing.");
+      if (
+        p.interests !== undefined &&
+        (!Array.isArray(p.interests) ||
+          p.interests.length > INTERESTS.length ||
+          p.interests.some(
+            (x: unknown) =>
+              typeof x !== "string" || !INTERESTS.includes(x as any),
+          ))
+      )
+        throw new DomainError("Choose interests from the available options.");
       w.preferences = {
         ...w.preferences,
         appearance: p.appearance,
         currency: p.currency,
         locale: p.locale,
         timeZone: p.timeZone,
-        interests: Array.isArray(p.interests)
-          ? p.interests
-              .filter((x: unknown) => typeof x === "string")
-              .slice(0, 10)
-          : [],
+        density: p.density ?? w.preferences.density ?? "comfortable",
+        interests:
+          p.interests === undefined
+            ? w.preferences.interests
+            : [...new Set<string>(p.interests)],
         onboarding: Math.max(
           w.preferences.onboarding,
           Math.min(1, Math.max(0, Number(p.onboarding) || 0)),

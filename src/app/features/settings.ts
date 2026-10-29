@@ -2,6 +2,8 @@ import { Component, inject } from "@angular/core";
 import { ReactiveFormsModule, FormBuilder } from "@angular/forms";
 import { ActivatedRoute, Router, RouterLink } from "@angular/router";
 import { Store } from "../core/store";
+import { INTERESTS } from "../domain/preferences";
+import { Preferences } from "../domain/models";
 import { Icon, Empty } from "../shared/ui";
 @Component({
   standalone: true,
@@ -93,8 +95,57 @@ import { Icon, Empty } from "../shared/ui";
                 >
               }
             </div>
+            <h3>Table and list spacing</h3>
+            <label
+              >Spacing<select formControlName="density">
+                <option value="comfortable">Comfortable</option>
+                <option value="compact">Compact</option>
+              </select></label
+            >
+            <p class="muted">
+              Compact fits more rows on desktop. Text sizes and mobile spacing
+              stay the same.
+            </p>
+            <h3>Interests (optional)</h3>
+            <p class="muted">
+              Save topics you care about. Personalized news is not connected
+              yet.
+            </p>
+            <div class="interest-options">
+              @for (interest of interests; track interest) {
+                <button
+                  type="button"
+                  class="button secondary"
+                  [class.selected]="selectedInterests.includes(interest)"
+                  [attr.aria-pressed]="selectedInterests.includes(interest)"
+                  (click)="toggleInterest(interest)"
+                >
+                  {{ interest }}
+                </button>
+              }
+            </div>
+            @if (conflict) {
+              <div class="callout" role="status">
+                <p>
+                  Preferences changed in another tab. Your unsaved choices are
+                  still here. Load the latest preferences to discard these
+                  choices and review the saved values.
+                </p>
+                <button
+                  type="button"
+                  class="button secondary"
+                  [disabled]="s.busy() || loading"
+                  (click)="reloadPreferences()"
+                >
+                  Load latest preferences
+                </button>
+              </div>
+            }
             <div class="form-actions">
-              <button class="button primary" [disabled]="s.busy()">
+              <button
+                class="button primary"
+                [disabled]="s.busy() || loading || conflict"
+              >
                 {{
                   onboarding
                     ? "Save & create your portfolio"
@@ -186,31 +237,65 @@ export class SettingsPage {
   router = inject(Router);
   onboarding = this.router.url.includes("/onboarding");
   section = "preferences";
+  interests = INTERESTS;
+  selectedInterests: string[] = [];
+  snapshot!: Preferences;
+  conflict = false;
+  loading = false;
   form = this.fb.nonNullable.group({
     currency: ["USD"],
     locale: ["en-US"],
     timeZone: ["UTC"],
     appearance: ["system"],
+    density: ["comfortable"],
   });
   constructor() {
     this.route.paramMap.subscribe(
       (p) => (this.section = p.get("section") || "preferences"),
     );
-    this.form.patchValue(this.s.workspace()!.preferences);
+    this.loadForm();
+  }
+  loadForm() {
+    this.snapshot = structuredClone(this.s.workspace()!.preferences);
+    this.form.reset({
+      ...this.snapshot,
+      density: this.snapshot.density ?? "comfortable",
+    });
+    this.selectedInterests = [...this.snapshot.interests];
+    this.conflict = false;
+  }
+  toggleInterest(interest: string) {
+    this.selectedInterests = this.selectedInterests.includes(interest)
+      ? this.selectedInterests.filter((x) => x !== interest)
+      : [...this.selectedInterests, interest];
+  }
+  async reloadPreferences() {
+    if (this.loading || this.s.busy()) return;
+    this.loading = true;
+    const owner = this.s.user()?.id;
+    await this.s.refresh();
+    if (!this.s.error() && this.s.user()?.id === owner) {
+      this.loadForm();
+      this.s.applyTheme(this.snapshot.appearance);
+    }
+    this.loading = false;
   }
   async save() {
+    if (this.conflict || this.loading || this.s.busy()) return;
     const data = {
-      ...this.s.workspace()!.preferences,
+      ...this.snapshot,
       ...this.form.getRawValue(),
-      onboarding: this.onboarding
-        ? 3
-        : this.s.workspace()!.preferences.onboarding,
+      interests: this.selectedInterests,
+      onboarding: this.onboarding ? 1 : this.snapshot.onboarding,
     };
     if (
       await this.s.mutate("/me/preferences", "PATCH", data, "Preferences saved")
     ) {
       this.s.applyTheme(data.appearance);
+      this.loadForm();
       if (this.onboarding) await this.router.navigateByUrl("/portfolios/new");
+    } else if (this.s.lastErrorStatus === 409) {
+      this.conflict = true;
     }
   }
 }

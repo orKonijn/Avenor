@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule } from "@angular/forms";
 import { ActivatedRoute, Router, RouterLink } from "@angular/router";
 import { Store } from "../core/store";
 import { Icon } from "../shared/ui";
+import { INTERESTS } from "../domain/preferences";
 import { OpeningDraft } from "../domain/models";
 
 @Component({
@@ -75,8 +76,30 @@ import { OpeningDraft } from "../domain/models";
                 </button>
               }
             </div>
+            @if (preferencesConflict) {
+              <div class="callout" role="status">
+                <p>
+                  Preferences changed. Your unsaved choices remain here. Load
+                  the latest preferences to discard them and review the saved
+                  values.
+                </p>
+                <button
+                  type="button"
+                  class="button secondary"
+                  [disabled]="s.busy() || loadingPreferences"
+                  (click)="reloadPreferences()"
+                >
+                  Load latest preferences
+                </button>
+              </div>
+            }
             <div class="form-actions">
-              <button class="button primary" [disabled]="s.busy()">
+              <button
+                class="button primary"
+                [disabled]="
+                  s.busy() || preferencesConflict || loadingPreferences
+                "
+              >
                 Save & continue <av-icon name="arrow" />
               </button>
             </div>
@@ -254,7 +277,10 @@ export class OnboardingPage {
   saving = false;
   pending: { revision: number; draft: OpeningDraft } | null = null;
   key = crypto.randomUUID();
-  interests = ["Technology", "Diversification", "Fixed income"];
+  interests = INTERESTS;
+  preferencesConflict = false;
+  loadingPreferences = false;
+  preferencesSnapshot = structuredClone(this.s.workspace()!.preferences);
   selectedInterests = [...this.s.workspace()!.preferences.interests];
   preferences = this.fb.nonNullable.group({
     currency: [this.s.workspace()!.preferences.currency],
@@ -323,12 +349,31 @@ export class OnboardingPage {
       : [...this.selectedInterests, value];
     this.preferences.markAsDirty();
   }
+  loadPreferences() {
+    this.preferencesSnapshot = structuredClone(this.s.workspace()!.preferences);
+    this.preferences.reset({
+      currency: this.preferencesSnapshot.currency,
+      timeZone: this.preferencesSnapshot.timeZone,
+    });
+    this.selectedInterests = [...this.preferencesSnapshot.interests];
+    this.preferencesConflict = false;
+  }
+  async reloadPreferences() {
+    if (this.s.busy() || this.loadingPreferences) return;
+    this.loadingPreferences = true;
+    const owner = this.s.user()?.id;
+    await this.s.refresh();
+    if (!this.s.error() && this.s.user()?.id === owner) this.loadPreferences();
+    this.loadingPreferences = false;
+  }
   async savePreferences() {
+    if (this.preferencesConflict || this.loadingPreferences || this.s.busy())
+      return;
     const result = await this.s.mutate(
       "/me/preferences",
       "PATCH",
       {
-        ...this.s.workspace()!.preferences,
+        ...this.preferencesSnapshot,
         ...this.preferences.getRawValue(),
         interests: this.selectedInterests,
         onboarding: 1,
@@ -336,11 +381,16 @@ export class OnboardingPage {
       "Preferences saved",
     );
     if (result) {
+      this.preferencesSnapshot = structuredClone(
+        this.s.workspace()!.preferences,
+      );
       this.preferences.markAsPristine();
       await this.router.navigate([
         "/onboarding",
         this.s.workspace()!.onboarding?.portfolioId ? "holdings" : "portfolio",
       ]);
+    } else if (this.s.lastErrorStatus === 409) {
+      this.preferencesConflict = true;
     }
   }
   async createPortfolio() {
@@ -351,6 +401,7 @@ export class OnboardingPage {
       "Portfolio created",
     );
     if (result) {
+      if (!this.preferences.dirty) this.loadPreferences();
       this.portfolio.markAsPristine();
       this.s.select(result.id);
       await this.router.navigateByUrl("/onboarding/holdings");
